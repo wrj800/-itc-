@@ -29,6 +29,7 @@ docs/环境启动说明.md
 docs/环境配置完成记录.md
 docs/开发文档.md
 docs/开发记录.md
+docs/开发过程记录.md
 deploy/wsl-real-node.md
 ```
 
@@ -46,4 +47,5 @@ deploy/wsl-real-node.md
 
 1. `docs/开发文档.md`
 2. `docs/开发记录.md`
-3. 与环境、部署、接口相关的专项文档
+3. `docs/开发过程记录.md`
+4. 与环境、部署、接口相关的专项文档

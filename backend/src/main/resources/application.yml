@@ -1,0 +1,21 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: ict-ops-backend
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+
+ict:
+  prometheus:
+    base-url: http://127.0.0.1:9090
+    wsl-base-url: http://172.18.219.55:19090

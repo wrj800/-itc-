@@ -1,68 +1,79 @@
 @startuml
-package "前端应用" {
-  [Vue3 Admin]
-  [ECharts Dashboard]
+skinparam componentStyle rectangle
+skinparam linetype ortho
+
+package "前端展示层" {
+  [Vue3 运维控制台] as Vue
+  [Element Plus 组件] as Element
+  [ECharts 图表] as ECharts
 }
 
-package "后端业务服务" {
-  [Auth Module]
-  [Device Module]
-  [Collector Module]
-  [Alarm Module]
-  [WorkOrder Module]
-  [Knowledge Module]
+package "Spring Boot 业务层" {
+  [认证权限模块] as Auth
+  [设备资产模块] as Device
+  [监控目标模块] as Target
+  [指标查询适配器] as MetricAdapter
+  [告警中心模块] as Alarm
+  [工单管理模块] as Ticket
+  [知识库元数据模块] as Knowledge
+  [AI 诊断客户端] as AiClient
 }
 
 package "监控采集层" {
-  [Prometheus Adapter]
-  [Blackbox Adapter]
-  [SNMP Adapter]
-  [Fault Injection]
+  [Prometheus] as Prometheus
+  [node_exporter] as NodeExporter
+  [Blackbox Exporter] as Blackbox
+  [SNMP/网络设备模拟器] as SnmpSim
 }
 
-package "AI服务" {
-  [Log Analyzer]
-  [Diagnosis Service]
-  [RAG Service]
-  [Document Parser]
+package "AI 服务层" {
+  [FastAPI 服务] as FastAPI
+  [日志分析服务] as LogAnalyzer
+  [故障诊断服务] as Diagnosis
+  [RAG 检索服务] as Rag
+  [文档解析服务] as Parser
 }
 
 database "MySQL" as MySQL
 database "Redis" as Redis
 database "Vector DB" as VectorDB
-database "Prometheus" as Prometheus
-cloud "LLM API" as LLM
+cloud "大模型 API" as LLM
 
-[Vue3 Admin] --> [Auth Module]
-[Vue3 Admin] --> [Device Module]
-[Vue3 Admin] --> [Collector Module]
-[Vue3 Admin] --> [Alarm Module]
-[Vue3 Admin] --> [WorkOrder Module]
-[Vue3 Admin] --> [Knowledge Module]
-[ECharts Dashboard] --> [Device Module]
-[ECharts Dashboard] --> [Alarm Module]
+Vue --> Element
+Vue --> ECharts
+Vue --> Auth : REST
+Vue --> Device : REST
+Vue --> Target : REST
+Vue --> Alarm : REST
+Vue --> Ticket : REST
+Vue --> Knowledge : REST
+Vue --> AiClient : REST
 
-[Auth Module] --> MySQL
-[Auth Module] --> Redis
-[Device Module] --> MySQL
-[Collector Module] --> MySQL
-[Collector Module] --> [Prometheus Adapter]
-[Collector Module] --> [Blackbox Adapter]
-[Collector Module] --> [SNMP Adapter]
-[Collector Module] --> [Fault Injection]
-[Alarm Module] --> MySQL
-[WorkOrder Module] --> MySQL
-[Knowledge Module] --> MySQL
-[Knowledge Module] --> [RAG Service]
-[Alarm Module] --> [Log Analyzer]
-[WorkOrder Module] --> [Diagnosis Service]
+Auth --> MySQL
+Auth --> Redis
+Device --> MySQL
+Target --> MySQL
+Target --> MetricAdapter
+MetricAdapter --> Prometheus : HTTP API
+Alarm --> MySQL
+Alarm --> MetricAdapter
+Ticket --> MySQL
+Ticket --> Alarm
+Knowledge --> MySQL
+Knowledge --> AiClient
+AiClient --> FastAPI : REST
 
-[Log Analyzer] --> LLM
-[Diagnosis Service] --> LLM
-[RAG Service] --> VectorDB
-[RAG Service] --> LLM
-[Document Parser] --> VectorDB
-[Prometheus Adapter] --> Prometheus
-[Blackbox Adapter] --> Prometheus
-[SNMP Adapter] --> Prometheus
+Prometheus --> NodeExporter : scrape
+Prometheus --> Blackbox : probe
+Prometheus --> SnmpSim : scrape/exporter
+
+FastAPI --> LogAnalyzer
+FastAPI --> Diagnosis
+FastAPI --> Rag
+FastAPI --> Parser
+LogAnalyzer --> LLM
+Diagnosis --> LLM
+Rag --> VectorDB
+Rag --> LLM
+Parser --> VectorDB
 @enduml

@@ -1,60 +1,66 @@
 @startuml
 left to right direction
 skinparam packageStyle rectangle
+skinparam actorStyle awesome
+skinparam shadowing false
+skinparam usecase {
+  BackgroundColor #F8FAFC
+  BorderColor #334155
+  ArrowColor #475569
+}
 
 actor "系统管理员" as Admin
 actor "运维主管" as Manager
 actor "运维人员" as Operator
-actor "普通用户" as User
-actor "AI服务" as AI
+actor "只读访客" as Viewer
+actor "Prometheus/Exporter" as Collector
+actor "AI 服务" as AI
 
-rectangle "AI智能运维与故障诊断平台" {
-  usecase "登录系统" as UC_Login
-  usecase "管理用户" as UC_User
-  usecase "管理角色权限" as UC_Role
-  usecase "管理设备资产" as UC_Device
-  usecase "查看监控大屏" as UC_Dashboard
-  usecase "查看告警" as UC_AlarmView
-  usecase "处理告警" as UC_AlarmHandle
-  usecase "告警转工单" as UC_AlarmToOrder
-  usecase "指派工单" as UC_Assign
-  usecase "处理工单" as UC_OrderHandle
-  usecase "分析日志" as UC_Log
-  usecase "AI故障诊断" as UC_Diagnose
-  usecase "上传知识文档" as UC_Upload
+rectangle "ICT 智能运维与故障诊断平台" {
+  usecase "用户与权限管理" as UC_AUTH
+  usecase "设备资产管理" as UC_DEVICE
+  usecase "监控目标管理" as UC_TARGET
+  usecase "运维总览查看" as UC_DASHBOARD
+  usecase "实时指标查询" as UC_METRIC
+  usecase "告警中心管理" as UC_ALARM
+  usecase "告警转工单" as UC_ALARM_TICKET
+  usecase "工单处理闭环" as UC_TICKET
+  usecase "日志分析" as UC_LOG
+  usecase "AI 故障诊断" as UC_DIAGNOSIS
+  usecase "知识库维护" as UC_KNOWLEDGE
   usecase "知识库问答" as UC_QA
 }
 
-Admin --> UC_Login
-Admin --> UC_User
-Admin --> UC_Role
-Admin --> UC_Device
-Admin --> UC_Upload
-Admin --> UC_Dashboard
+Admin --> UC_AUTH
+Admin --> UC_DEVICE
+Admin --> UC_TARGET
+Admin --> UC_KNOWLEDGE
 
-Manager --> UC_Login
-Manager --> UC_Dashboard
-Manager --> UC_AlarmView
-Manager --> UC_AlarmToOrder
-Manager --> UC_Assign
+Manager --> UC_DASHBOARD
+Manager --> UC_ALARM
+Manager --> UC_ALARM_TICKET
+Manager --> UC_TICKET
 
-Operator --> UC_Login
-Operator --> UC_Device
-Operator --> UC_AlarmView
-Operator --> UC_AlarmHandle
-Operator --> UC_OrderHandle
-Operator --> UC_Log
-Operator --> UC_Diagnose
-Operator --> UC_QA
+Operator --> UC_DEVICE
+Operator --> UC_TARGET
+Operator --> UC_ALARM
+Operator --> UC_TICKET
+Operator --> UC_LOG
+Operator --> UC_DIAGNOSIS
 
-User --> UC_Login
-User --> UC_QA
+Viewer --> UC_DASHBOARD
+Viewer --> UC_QA
 
-AI --> UC_Log
-AI --> UC_Diagnose
+Collector --> UC_METRIC
+AI --> UC_LOG
+AI --> UC_DIAGNOSIS
 AI --> UC_QA
 
-UC_AlarmToOrder .> UC_AlarmView : <<include>>
-UC_OrderHandle .> UC_Log : <<extend>>
-UC_Diagnose .> UC_QA : <<extend>>
+UC_DASHBOARD .> UC_METRIC : <<include>>
+UC_ALARM .> UC_METRIC : <<include>>
+UC_ALARM_TICKET .> UC_ALARM : <<include>>
+UC_TICKET .> UC_ALARM_TICKET : <<extend>>
+UC_DIAGNOSIS .> UC_METRIC : <<include>>
+UC_DIAGNOSIS .> UC_QA : <<extend>>
+UC_QA .> UC_KNOWLEDGE : <<include>>
 @enduml

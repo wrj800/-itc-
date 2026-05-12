@@ -3,116 +3,154 @@ hide circle
 skinparam linetype ortho
 
 entity "sys_user" as user {
-  * id : bigint
+  * id : bigint <<PK>>
   --
   username : varchar
+  password : varchar
   real_name : varchar
+  phone : varchar
   status : varchar
 }
 
 entity "sys_role" as role {
-  * id : bigint
+  * id : bigint <<PK>>
   --
   role_code : varchar
   role_name : varchar
+  description : varchar
+}
+
+entity "sys_user_role" as user_role {
+  * user_id : bigint <<FK>>
+  * role_id : bigint <<FK>>
 }
 
 entity "ict_device" as device {
-  * id : bigint
+  * id : bigint <<PK>>
   --
   device_code : varchar
   device_name : varchar
   device_type : varchar
   ip_address : varchar
+  location : varchar
+  manager : varchar
   status : varchar
 }
 
 entity "monitor_target" as target {
-  * id : bigint
+  * id : bigint <<PK>>
   --
-  device_id : bigint
+  device_id : bigint <<FK>>
   target_name : varchar
+  target_type : varchar
   endpoint : varchar
   collect_method : varchar
+  prometheus_job : varchar
   status : varchar
 }
 
 entity "metric_rule" as rule {
-  * id : bigint
+  * id : bigint <<PK>>
   --
-  target_id : bigint
+  target_id : bigint <<FK>>
   metric_name : varchar
   promql : text
+  threshold_operator : varchar
   threshold_value : decimal
+  alarm_level : varchar
 }
 
 entity "device_metric" as metric {
-  * id : bigint
+  * id : bigint <<PK>>
   --
-  device_id : bigint
+  device_id : bigint <<FK>>
   cpu_usage : decimal
   memory_usage : decimal
   disk_usage : decimal
+  online_status : varchar
   collected_time : datetime
 }
 
 entity "alarm_record" as alarm {
-  * id : bigint
+  * id : bigint <<PK>>
   --
-  device_id : bigint
+  device_id : bigint <<FK>>
+  rule_id : bigint <<FK>>
   alarm_title : varchar
   alarm_level : varchar
+  alarm_type : varchar
   status : varchar
 }
 
 entity "work_order" as ticket {
-  * id : bigint
+  * id : bigint <<PK>>
   --
-  alarm_id : bigint
+  alarm_id : bigint <<FK>>
   order_no : varchar
-  assignee_id : bigint
+  title : varchar
+  priority : varchar
+  assignee_id : bigint <<FK>>
   status : varchar
 }
 
 entity "work_order_log" as ticket_log {
-  * id : bigint
+  * id : bigint <<PK>>
   --
-  work_order_id : bigint
-  operator_id : bigint
+  work_order_id : bigint <<FK>>
+  operator_id : bigint <<FK>>
   action : varchar
+  content : text
+}
+
+entity "log_analysis_record" as log_record {
+  * id : bigint <<PK>>
+  --
+  device_id : bigint <<FK>>
+  risk_level : varchar
+  fault_type : varchar
+  suggestion : text
 }
 
 entity "knowledge_document" as doc {
-  * id : bigint
+  * id : bigint <<PK>>
   --
   file_name : varchar
+  file_type : varchar
+  file_path : varchar
   parse_status : varchar
+  chunk_count : int
 }
 
 entity "knowledge_chunk" as chunk {
-  * id : bigint
+  * id : bigint <<PK>>
   --
-  document_id : bigint
+  document_id : bigint <<FK>>
   chunk_index : int
+  content : text
   vector_id : varchar
 }
 
 entity "ai_qa_record" as qa {
-  * id : bigint
+  * id : bigint <<PK>>
   --
-  user_id : bigint
+  user_id : bigint <<FK>>
   question : text
   answer : text
+  source_refs : text
 }
 
-user }o--o{ role : 用户角色
+user ||--o{ user_role : 关联
+role ||--o{ user_role : 关联
 device ||--o{ target : 配置
 target ||--o{ rule : 规则
-device ||--o{ metric : 产生
+device ||--o{ metric : 采集
 device ||--o{ alarm : 产生
+rule ||--o{ alarm : 触发
 alarm ||--o| ticket : 转为
-ticket ||--o{ ticket_log : 包含
-user ||--o{ ticket : 处理
+user ||--o{ ticket : 指派
+ticket ||--o{ ticket_log : 记录
+user ||--o{ ticket_log : 操作
+device ||--o{ log_record : 分析
 doc ||--o{ chunk : 切片
 user ||--o{ qa : 提问
 @enduml

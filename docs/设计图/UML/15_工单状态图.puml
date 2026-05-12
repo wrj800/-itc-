@@ -1,0 +1,23 @@
+@startuml
+[*] --> 待分派 : 告警转工单/人工创建
+
+待分派 --> 处理中 : 指派处理人
+处理中 --> 待确认 : 提交处理结果
+待确认 --> 已关闭 : 确认解决
+待确认 --> 处理中 : 退回补充处理
+
+处理中 --> 已挂起 : 等待外部条件
+已挂起 --> 处理中 : 恢复处理
+待分派 --> 已取消 : 无需处理
+处理中 --> 已取消 : 工单撤销
+
+已关闭 --> [*]
+已取消 --> [*]
+
+state 待分派 : status=PENDING
+state 处理中 : status=PROCESSING
+state 已挂起 : status=SUSPENDED
+state 待确认 : status=CONFIRMING
+state 已关闭 : status=CLOSED
+state 已取消 : status=CANCELLED
+@enduml

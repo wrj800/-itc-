@@ -1,43 +1,54 @@
 @startuml
-node "用户浏览器" {
-  artifact "Vue3 前端页面"
+skinparam linetype ortho
+
+node "Windows 开发主机" as Windows {
+  node "浏览器" {
+    artifact "Vue3 前端\nhttp://127.0.0.1:5173" as Vue
+  }
+
+  node "Spring Boot 进程" {
+    component "backend :8080" as Backend
+  }
+
+  node "FastAPI 进程" {
+    component "ai-service :8000" as AiService
+  }
+
+  node "Docker Desktop" {
+    database "Redis :6379" as Redis
+    database "Docker Prometheus :9090" as DockerProm
+    component "Blackbox Exporter :9115" as Blackbox
+    component "Docker node_exporter :9100" as DockerNode
+  }
 }
 
-node "应用服务器" {
-  component "Spring Boot Backend\n:8080"
-  component "FastAPI AI Service\n:8000"
-  component "Prometheus\n:9090"
-  component "Blackbox Exporter\n:9115"
+node "WSL2 Ubuntu-24.04\n真实 Linux 节点" as WSL {
+  component "node_exporter :19100" as WslNode
+  database "WSL Prometheus :19090" as WslProm
 }
 
-node "数据服务器" {
-  database "MySQL\n:3306"
-  database "Redis\n:6379"
-  database "Chroma / Vector DB"
+node "后续可扩展数据层" as DataLayer {
+  database "MySQL :3306" as MySQL
+  database "Vector DB" as VectorDB
 }
 
-node "虚拟设备实验环境" {
-  component "Linux VM\nnode_exporter :9100"
-  component "Windows VM\nwindows_exporter :9182"
-  component "Web/App Service\nHTTP/TCP"
-  component "SNMP Simulator\n:161"
+cloud "大模型服务" as LLM {
+  component "OpenAI-compatible API" as LLMAPI
 }
 
-cloud "大模型服务" {
-  component "OpenAI-compatible API"
-}
+Vue --> Backend : HTTP REST
+Backend --> Redis : Cache
+Backend --> DockerProm : Prometheus API
+Backend --> WslProm : Prometheus API
+Backend --> AiService : REST
+Backend --> MySQL : JDBC
+AiService --> VectorDB : 向量检索
+AiService --> LLMAPI : HTTPS
 
-"用户浏览器" --> "Spring Boot Backend\n:8080" : HTTPS/HTTP REST
-"用户浏览器" --> "Vue3 前端页面" : 访问页面
-"Spring Boot Backend\n:8080" --> "MySQL\n:3306" : JDBC
-"Spring Boot Backend\n:8080" --> "Redis\n:6379" : Cache
-"Spring Boot Backend\n:8080" --> "FastAPI AI Service\n:8000" : REST
-"Spring Boot Backend\n:8080" --> "Prometheus\n:9090" : HTTP API
-"Prometheus\n:9090" --> "Linux VM\nnode_exporter :9100" : scrape
-"Prometheus\n:9090" --> "Windows VM\nwindows_exporter :9182" : scrape
-"Prometheus\n:9090" --> "Blackbox Exporter\n:9115" : probe
-"Blackbox Exporter\n:9115" --> "Web/App Service\nHTTP/TCP" : HTTP/TCP/ICMP
-"Prometheus\n:9090" --> "SNMP Simulator\n:161" : SNMP exporter可选
-"FastAPI AI Service\n:8000" --> "Chroma / Vector DB" : 向量检索
-"FastAPI AI Service\n:8000" --> "OpenAI-compatible API" : 模型调用
+DockerProm --> DockerNode : scrape
+DockerProm --> Blackbox : probe
+Blackbox --> Backend : HTTP 探测
+Blackbox --> Vue : HTTP 探测
+
+WslProm --> WslNode : scrape
 @enduml

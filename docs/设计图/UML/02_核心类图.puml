@@ -1,108 +1,170 @@
 @startuml
 skinparam classAttributeIconSize 0
+skinparam linetype ortho
+hide empty methods
 
-class User {
-  +Long id
-  +String username
-  +String password
-  +String realName
-  +String status
+package "权限域" {
+  class User {
+    +Long id
+    +String username
+    +String realName
+    +String phone
+    +String status
+    +LocalDateTime lastLoginTime
+  }
+
+  class Role {
+    +Long id
+    +String roleCode
+    +String roleName
+    +String description
+  }
 }
 
-class Role {
-  +Long id
-  +String roleCode
-  +String roleName
+package "资产与采集域" {
+  class Device {
+    +Long id
+    +String deviceCode
+    +String deviceName
+    +DeviceType deviceType
+    +String ipAddress
+    +String location
+    +DeviceStatus status
+  }
+
+  class MonitorTarget {
+    +Long id
+    +Long deviceId
+    +String targetName
+    +CollectMethod collectMethod
+    +String endpoint
+    +String prometheusJob
+    +TargetStatus status
+  }
+
+  class MetricRule {
+    +Long id
+    +Long targetId
+    +String metricName
+    +String promql
+    +String thresholdOperator
+    +BigDecimal thresholdValue
+    +AlarmLevel alarmLevel
+  }
+
+  class DeviceMetric {
+    +Long id
+    +Long deviceId
+    +BigDecimal cpuUsage
+    +BigDecimal memoryUsage
+    +BigDecimal diskUsage
+    +String onlineStatus
+    +LocalDateTime collectedTime
+  }
 }
 
-class Device {
-  +Long id
-  +String deviceCode
-  +String deviceName
-  +String deviceType
-  +String ipAddress
-  +String location
-  +String manager
-  +String status
+package "告警与工单域" {
+  class AlarmRecord {
+    +Long id
+    +Long deviceId
+    +Long ruleId
+    +String alarmTitle
+    +AlarmLevel alarmLevel
+    +String alarmContent
+    +AlarmStatus status
+    +LocalDateTime createdTime
+    +LocalDateTime handledTime
+  }
+
+  class WorkOrder {
+    +Long id
+    +String orderNo
+    +Long alarmId
+    +String title
+    +TicketPriority priority
+    +Long assigneeId
+    +TicketStatus status
+    +LocalDateTime createdTime
+    +LocalDateTime closedTime
+  }
+
+  class WorkOrderLog {
+    +Long id
+    +Long workOrderId
+    +Long operatorId
+    +String action
+    +String content
+    +LocalDateTime createdTime
+  }
 }
 
-class DeviceMetric {
-  +Long id
-  +Long deviceId
-  +BigDecimal cpuUsage
-  +BigDecimal memoryUsage
-  +BigDecimal diskUsage
-  +String onlineStatus
-  +LocalDateTime collectedTime
+package "智能诊断域" {
+  class LogAnalysisRecord {
+    +Long id
+    +Long deviceId
+    +String riskLevel
+    +String faultType
+    +String keywords
+    +String suggestion
+  }
+
+  class KnowledgeDocument {
+    +Long id
+    +String fileName
+    +String fileType
+    +String filePath
+    +String parseStatus
+    +Integer chunkCount
+  }
+
+  class KnowledgeChunk {
+    +Long id
+    +Long documentId
+    +Integer chunkIndex
+    +String contentSummary
+    +String vectorId
+  }
+
+  class AiQaRecord {
+    +Long id
+    +Long userId
+    +String question
+    +String answer
+    +String sourceRefs
+  }
 }
 
-class AlarmRecord {
-  +Long id
-  +Long deviceId
-  +String alarmTitle
-  +String alarmLevel
-  +String alarmType
-  +String status
+enum DeviceStatus {
+  ONLINE
+  OFFLINE
+  MAINTENANCE
+  FAULT
 }
 
-class WorkOrder {
-  +Long id
-  +String orderNo
-  +Long alarmId
-  +String title
-  +String priority
-  +Long assigneeId
-  +String status
+enum AlarmStatus {
+  PENDING
+  HANDLING
+  CLOSED
+  IGNORED
 }
 
-class WorkOrderLog {
-  +Long id
-  +Long workOrderId
-  +Long operatorId
-  +String action
-  +String content
+enum TicketStatus {
+  PENDING
+  PROCESSING
+  CONFIRMING
+  CLOSED
 }
 
-class LogAnalysisRecord {
-  +Long id
-  +Long deviceId
-  +String riskLevel
-  +String faultType
-  +String keywords
-  +String suggestion
-}
-
-class KnowledgeDocument {
-  +Long id
-  +String fileName
-  +String fileType
-  +String filePath
-  +String parseStatus
-  +Integer chunkCount
-}
-
-class KnowledgeChunk {
-  +Long id
-  +Long documentId
-  +Integer chunkIndex
-  +String content
-  +String vectorId
-}
-
-class AiQaRecord {
-  +Long id
-  +Long userId
-  +String question
-  +String answer
-  +String sourceRefs
-}
-
-User "many" -- "many" Role : 拥有
-Device "1" -- "many" DeviceMetric : 产生
-Device "1" -- "many" AlarmRecord : 产生
+User "0..*" -- "0..*" Role : 分配
+Device "1" -- "0..*" MonitorTarget : 配置
+MonitorTarget "1" -- "0..*" MetricRule : 绑定规则
+Device "1" -- "0..*" DeviceMetric : 产生指标
+Device "1" -- "0..*" AlarmRecord : 产生告警
+MetricRule "0..1" -- "0..*" AlarmRecord : 触发
 AlarmRecord "1" -- "0..1" WorkOrder : 转为
-WorkOrder "1" -- "many" WorkOrderLog : 包含
-Device "1" -- "many" LogAnalysisRecord : 关联
-KnowledgeDocument "1" -- "many" KnowledgeChunk : 切分
-User "1" -- "many" AiQaRecord : 提问
+WorkOrder "1" -- "0..*" WorkOrderLog : 处理记录
+User "1" -- "0..*" WorkOrder : 处理
+Device "1" -- "0..*" LogAnalysisRecord : 日志分析
+KnowledgeDocument "1" -- "1..*" KnowledgeChunk : 文档切片
+User "1" -- "0..*" AiQaRecord : 问答历史
 @enduml

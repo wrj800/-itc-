@@ -1,0 +1,23 @@
+@startuml
+[*] --> 待处理 : 规则触发/人工录入
+
+待处理 --> 处理中 : 确认告警
+待处理 --> 已忽略 : 判断为误报
+待处理 --> 已关闭 : 直接处理
+
+处理中 --> 已转工单 : 创建工单
+处理中 --> 已关闭 : 处理完成
+处理中 --> 已忽略 : 确认为无效告警
+
+已转工单 --> 处理中 : 工单退回
+已转工单 --> 已关闭 : 工单关闭
+
+已忽略 --> [*]
+已关闭 --> [*]
+
+state 待处理 : status=PENDING
+state 处理中 : status=HANDLING
+state 已转工单 : status=TO_TICKET
+state 已忽略 : status=IGNORED
+state 已关闭 : status=CLOSED
+@enduml

@@ -30,7 +30,6 @@ docs/环境配置完成记录.md
 docs/开发文档.md
 docs/开发记录.md
 docs/开发过程记录.md
-docs/原型设计说明.md
 docs/设计图索引.md
 docs/UML工具使用说明.md
 docs/设计图/

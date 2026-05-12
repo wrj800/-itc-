@@ -1,30 +1,32 @@
 @startuml
 actor "运维人员" as Operator
-participant "前端页面" as Frontend
-participant "后端API" as Backend
-participant "告警服务" as AlarmService
-participant "工单服务" as WorkOrderService
+boundary "Vue 告警页面" as Frontend
+control "AlarmController" as AlarmController
+control "AlarmService" as AlarmService
+control "WorkOrderService" as WorkOrderService
 database "MySQL" as DB
+queue "通知/待办" as Notify
 
 Operator -> Frontend : 查看告警详情
-Frontend -> Backend : GET /api/alarms/{id}
-Backend -> AlarmService : getAlarm(id)
-AlarmService -> DB : 查询告警
-DB --> AlarmService : 告警数据
-AlarmService --> Backend : 告警详情
-Backend --> Frontend : 返回告警详情
+Frontend -> AlarmController : GET /api/alarms/{id}
+AlarmController -> AlarmService : getDetail(id)
+AlarmService -> DB : 查询告警、设备、规则
+DB --> AlarmService : 告警详情
+AlarmService --> AlarmController : AlarmDetailVO
+AlarmController --> Frontend : 返回告警详情
 
-Operator -> Frontend : 点击转工单
-Frontend -> Backend : POST /api/alarms/{id}/create-order
-Backend -> AlarmService : checkAlarmStatus(id)
-AlarmService -> DB : 查询告警状态
-DB --> AlarmService : 状态有效
-Backend -> WorkOrderService : createFromAlarm(alarmId)
-WorkOrderService -> DB : 插入工单
-WorkOrderService -> DB : 插入工单日志
-WorkOrderService -> DB : 更新告警状态
-DB --> WorkOrderService : 保存成功
-WorkOrderService --> Backend : 工单ID
-Backend --> Frontend : 创建成功
-Frontend --> Operator : 展示工单详情
+Operator -> Frontend : 点击“转工单”
+Frontend -> AlarmController : POST /api/alarms/{id}/work-orders
+AlarmController -> AlarmService : validateTransfer(id)
+AlarmService -> DB : 校验告警状态
+DB --> AlarmService : PENDING/HANDLING
+AlarmController -> WorkOrderService : createFromAlarm(id, assigneeId)
+WorkOrderService -> DB : 插入 work_order
+WorkOrderService -> DB : 插入 work_order_log
+WorkOrderService -> DB : 更新 alarm_record.status=HANDLING
+WorkOrderService -> Notify : 发送工单待办
+Notify --> WorkOrderService : accepted
+WorkOrderService --> AlarmController : 工单编号
+AlarmController --> Frontend : 创建成功
+Frontend --> Operator : 跳转工单详情
 @enduml

@@ -51,7 +51,33 @@ deploy/wsl-real-node.md
 2. Docker 观测栈可用。
 3. WSL Ubuntu 真实 Linux 节点可被 Prometheus 采集。
 4. 后端支持 `docker` 与 `wsl` 两个 Prometheus 数据源。
-5. 前端已扩展为运维平台原型，包含总览、资产、监控、告警、工单和 AI 诊断模块。
+5. 后端已新增运维业务接口，覆盖总览、设备资产、监控目标、告警中心、工单流转和 AI 诊断。
+6. 前端已扩展为可演示的运维工作台，包含总览、资产、监控、告警、工单和 AI 诊断模块。
+7. 当前业务数据先使用内存样例数据打通闭环，后续再替换为 MySQL 持久化。
+
+## 当前可访问地址
+
+```text
+前端：http://127.0.0.1:5173
+后端：http://127.0.0.1:8080/api/health
+Prometheus：http://127.0.0.1:9090
+Blackbox Exporter：http://127.0.0.1:9115
+```
+
+## 当前核心接口
+
+```http
+GET  /api/health
+GET  /api/ops/overview
+GET  /api/ops/assets
+GET  /api/ops/targets
+GET  /api/ops/alerts
+GET  /api/ops/work-orders
+POST /api/ops/alerts/{alertId}/work-orders
+POST /api/ops/diagnose
+GET  /api/monitor/prometheus/query?source=docker&query=up
+GET  /api/monitor/prometheus/query?source=wsl&query=up
+```
 
 ## 文档维护
 

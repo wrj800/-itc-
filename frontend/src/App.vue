@@ -24,6 +24,43 @@
         <span>{{ loginConfig.description }}</span>
       </div>
 
+      <div class="ops-visual">
+        <div class="ops-map-lines">
+          <span class="line-one"></span>
+          <span class="line-two"></span>
+          <span class="line-three"></span>
+        </div>
+        <div class="ops-card node-card left">
+          <span>核心交换机-01</span>
+          <strong>在线</strong>
+        </div>
+        <div class="ops-card node-card right">
+          <span>{{ loginRole === 'admin' ? '告警总数' : '待办工单' }}</span>
+          <strong>{{ loginRole === 'admin' ? '38' : '7' }}</strong>
+        </div>
+        <div class="core-device">
+          <i>◇</i>
+          <strong>核心设备</strong>
+          <small>{{ loginRole === 'admin' ? '统一纳管' : '现场处置' }}</small>
+        </div>
+        <div class="device-node node-prom">
+          <span>Prometheus</span>
+          <strong>UP</strong>
+        </div>
+        <div class="device-node node-redis">
+          <span>Redis</span>
+          <strong>Ready</strong>
+        </div>
+        <div class="device-node node-linux">
+          <span>Linux VM</span>
+          <strong>node_exporter</strong>
+        </div>
+        <div class="ops-card node-card bottom">
+          <span>服务可用率</span>
+          <strong>99.95%</strong>
+        </div>
+      </div>
+
       <div class="login-stats">
         <article v-for="item in loginStats" :key="item.label">
           <strong>{{ item.value }}</strong>
@@ -114,7 +151,7 @@
           <option>生产环境</option>
           <option>测试环境</option>
         </select>
-        <input class="date-range" value="2025-05-20 00:00:00 ~ 2025-05-20 23:59:59" readonly />
+        <input class="date-range" value="2026-05-12 00:00 ~ 2026-05-12 23:59" readonly />
         <button class="outline-button" type="button" @click="refreshAll">
           <el-icon><Refresh /></el-icon>
           刷新
@@ -368,9 +405,9 @@ const AdminDashboard = defineComponent({
   setup(props) {
     return () => h('div', { class: 'page-grid admin-overview' }, [
       h('section', { class: 'kpi-row' }, [
-        metricCard('在线设备数', String(props.overview.onlineAssets || 2342), '+3.31%', 'teal', Monitor),
-        metricCard('活跃告警数', String(props.overview.activeAlerts || 28), '-17.65%', 'orange', Bell),
-        metricCard('今日工单', String(props.overview.openWorkOrders || 56), '+12.00%', 'blue', Document),
+        metricCard('在线设备', String(Math.max(props.overview.onlineAssets, 116)), '+3.31%', 'teal', Monitor),
+        metricCard('活跃告警', String(Math.max(props.overview.activeAlerts, 9)), '-17.65%', 'orange', Bell),
+        metricCard('今日工单', String(Math.max(props.overview.openWorkOrders, 23)), '+12.00%', 'blue', Document),
         metricCard('服务可用率', `${props.overview.targetAvailability || 99.95}%`, '+0.02%', 'green', CircleCheck),
         metricCard('自动化成功率', '98.61%', '-0.35%', 'blue', MagicStick)
       ]),
@@ -426,7 +463,7 @@ const AdminDashboard = defineComponent({
           ticketColumn('待验证', [])
         ])
       ]),
-      h('section', { class: 'panel wide-table' }, [
+      h('section', { class: 'panel wide-table automation-table' }, [
         panelHead('最近自动化任务执行记录', '查看更多'),
         simpleTable(['任务名称', '目标范围', '执行结果', '执行时间', '操作人'], [
           ['日常健康检查', '全网设备', '成功', '2025-05-20 10:30:02', 'system'],
@@ -603,22 +640,39 @@ const MaintainerDesk = defineComponent({
   emits: ['diagnose', 'update:question'],
   setup(props, { emit }) {
     return () => h('div', { class: 'page-grid maintainer-desk' }, [
-      h('section', { class: 'kpi-row four' }, [
-        metricCard('待处理工单', String(props.workOrders.length || 7), '-2', 'blue', Tickets),
-        metricCard('即将超时', '2', '+1', 'orange', Warning),
-        metricCard('今日已完成', '11', '+3', 'green', CircleCheck),
-        metricCard('平均响应', '8分钟', '-2分钟', 'blue', Lightning)
-      ]),
-      h('section', { class: 'panel my-kanban' }, [
-        panelHead('我的工单', '只显示当前维护人员相关任务'),
-        h('div', { class: 'kanban-board compact' }, [
-          kanbanColumn('待接单', props.workOrders.filter((item) => item.status === 'open')),
-          kanbanColumn('处理中', props.workOrders.filter((item) => item.status === 'processing')),
-          kanbanColumn('待验证', [])
+      h('section', { class: 'maintainer-main' }, [
+        h('section', { class: 'kpi-row four' }, [
+          metricCard('待处理工单', String(props.workOrders.length || 7), '-2', 'blue', Tickets),
+          metricCard('即将超时', '2', '+1', 'orange', Warning),
+          metricCard('今日已完成', '11', '+3', 'green', CircleCheck),
+          metricCard('平均响应', '8分钟', '-2分钟', 'blue', Lightning)
+        ]),
+        h('section', { class: 'panel my-kanban' }, [
+          panelHead('我的工单', '只显示当前维护人员相关任务'),
+          h('div', { class: 'kanban-board compact maintainer-board' }, [
+            kanbanColumn('待接单', props.workOrders.filter((item) => item.status === 'open')),
+            kanbanColumn('处理中', props.workOrders.filter((item) => item.status === 'processing')),
+            kanbanColumn('待验证', []),
+            kanbanColumn('已完成', [])
+          ])
         ])
       ]),
       h('aside', { class: 'panel action-detail' }, [
-        panelHead('处置面板', 'AI 辅助诊断'),
+        panelHead('工单详情', 'AI 辅助诊断'),
+        h('div', { class: 'incident-title' }, [
+          h('span', '紧急'),
+          h('strong', 'WO-20260512-1001'),
+          h('em', '处理中')
+        ]),
+        detailLine('优先级', '紧急'),
+        detailLine('状态', '处理中'),
+        detailLine('SLA 剩余时间', '01:18:15'),
+        detailLine('关联告警', 'INC20260512088'),
+        detailLine('告警来源', 'Zabbix / 监控告警'),
+        detailLine('关联设备', '核心交换机 core-sw-01'),
+        h('h3', '故障描述'),
+        h('p', { class: 'incident-desc' }, 'CPU 使用率持续高于 92%，部分业务访问出现延迟，需要优先排查接口流量与设备负载。'),
+        h('h3', 'AI 诊断建议'),
         h('textarea', {
           value: props.question,
           onInput: (event: Event) => emit('update:question', (event.target as HTMLTextAreaElement).value)
@@ -630,7 +684,19 @@ const MaintainerDesk = defineComponent({
             h('p', props.diagnosis.conclusion),
             h('ul', props.diagnosis.recommendedActions.slice(0, 3).map((item) => h('li', item)))
           ])
-          : h('p', { class: 'muted' }, '输入故障现象后生成处置建议。')
+          : h('p', { class: 'muted' }, '输入故障现象后生成处置建议。'),
+        h('div', { class: 'work-actions' }, [
+          h('button', { class: 'primary-button', type: 'button' }, '接单'),
+          h('button', { class: 'outline-button strong', type: 'button' }, '转派'),
+          h('button', { class: 'primary-button', type: 'button' }, '提交处置'),
+          h('button', { class: 'danger-button', type: 'button' }, '关闭工单')
+        ]),
+        h('h3', '处理记录'),
+        h('ul', { class: 'record-list' }, [
+          h('li', '10:21 工单创建'),
+          h('li', '10:23 已指派给当前维护人员'),
+          h('li', '10:26 维护人员查看工单')
+        ])
       ])
     ]);
   }
@@ -771,8 +837,8 @@ const loginConfig = computed(() => {
 
 const loginStats = computed(() => loginRole.value === 'admin'
   ? [
-    { value: '2,342', label: '在线设备' },
-    { value: '28', label: '活跃告警' },
+    { value: '128', label: '纳管设备' },
+    { value: '9', label: '活跃告警' },
     { value: '99.95%', label: '服务可用率' }
   ]
   : [
@@ -923,7 +989,7 @@ function initPreviewSession() {
     activeView.value = (view as ViewKey) || 'overview';
   }
   if (role === 'maintainer') {
-    session.value = { role: 'maintainer', name: '张伟' };
+    session.value = { role: 'maintainer', name: '李四' };
     activeView.value = (view as ViewKey) || 'myTickets';
   }
 }

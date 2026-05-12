@@ -1,0 +1,18 @@
+@startuml
+start
+:登记设备资产;
+:配置监控目标;
+:Prometheus 加载采集配置;
+repeat
+  :采集 Exporter / Blackbox 指标;
+  :保存时序指标;
+  :后端调用 Prometheus API;
+  if (指标超过阈值?) then (是)
+    :生成告警记录;
+    :推送到告警中心;
+  else (否)
+    :更新总览状态;
+  endif
+repeat while (系统持续运行?) is (是)
+stop
+@enduml

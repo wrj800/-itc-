@@ -1,0 +1,30 @@
+@startuml
+actor "运维人员" as Operator
+participant "前端页面" as Frontend
+participant "后端API" as Backend
+participant "告警服务" as AlarmService
+participant "工单服务" as WorkOrderService
+database "MySQL" as DB
+
+Operator -> Frontend : 查看告警详情
+Frontend -> Backend : GET /api/alarms/{id}
+Backend -> AlarmService : getAlarm(id)
+AlarmService -> DB : 查询告警
+DB --> AlarmService : 告警数据
+AlarmService --> Backend : 告警详情
+Backend --> Frontend : 返回告警详情
+
+Operator -> Frontend : 点击转工单
+Frontend -> Backend : POST /api/alarms/{id}/create-order
+Backend -> AlarmService : checkAlarmStatus(id)
+AlarmService -> DB : 查询告警状态
+DB --> AlarmService : 状态有效
+Backend -> WorkOrderService : createFromAlarm(alarmId)
+WorkOrderService -> DB : 插入工单
+WorkOrderService -> DB : 插入工单日志
+WorkOrderService -> DB : 更新告警状态
+DB --> WorkOrderService : 保存成功
+WorkOrderService --> Backend : 工单ID
+Backend --> Frontend : 创建成功
+Frontend --> Operator : 展示工单详情
+@enduml

@@ -30,7 +30,18 @@ docs/环境配置完成记录.md
 docs/开发文档.md
 docs/开发记录.md
 docs/开发过程记录.md
+docs/原型设计说明.md
+docs/设计图索引.md
+docs/设计图/
 deploy/wsl-real-node.md
+```
+
+正式设计图和流程图见：
+
+```text
+../03_系统设计/原型与流程设计说明书.md
+../03_系统设计/页面线框图.md
+../03_系统设计/UML/
 ```
 
 ## 当前已完成
@@ -39,7 +50,7 @@ deploy/wsl-real-node.md
 2. Docker 观测栈可用。
 3. WSL Ubuntu 真实 Linux 节点可被 Prometheus 采集。
 4. 后端支持 `docker` 与 `wsl` 两个 Prometheus 数据源。
-5. 前端可展示 Docker 观测目标与 WSL Linux 主机信息。
+5. 前端已扩展为运维平台原型，包含总览、资产、监控、告警、工单和 AI 诊断模块。
 
 ## 文档维护
 
@@ -48,4 +59,5 @@ deploy/wsl-real-node.md
 1. `docs/开发文档.md`
 2. `docs/开发记录.md`
 3. `docs/开发过程记录.md`
-4. 与环境、部署、接口相关的专项文档
+4. `docs/原型设计说明.md`
+5. 与环境、部署、接口相关的专项文档

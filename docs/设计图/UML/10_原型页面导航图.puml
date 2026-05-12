@@ -1,0 +1,32 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+
+actor "我/运维人员" as Operator
+
+rectangle "ICT 智能运维平台原型" {
+  usecase "登录页" as Login
+  usecase "运维总览" as Overview
+  usecase "设备资产" as Asset
+  usecase "监控目标" as Target
+  usecase "告警中心" as Alarm
+  usecase "工单管理" as Ticket
+  usecase "AI 诊断" as Diagnosis
+  usecase "知识库" as Knowledge
+}
+
+Operator --> Login
+Login --> Overview
+Overview --> Asset
+Overview --> Target
+Overview --> Alarm
+Overview --> Ticket
+Overview --> Diagnosis
+Overview --> Knowledge
+
+Alarm .> Ticket : <<告警转工单>>
+Ticket .> Diagnosis : <<辅助分析>>
+Diagnosis .> Knowledge : <<检索知识>>
+Target .> Overview : <<采集状态汇总>>
+Asset .> Target : <<绑定监控目标>>
+@enduml

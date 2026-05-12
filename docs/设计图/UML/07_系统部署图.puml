@@ -1,0 +1,43 @@
+@startuml
+node "用户浏览器" {
+  artifact "Vue3 前端页面"
+}
+
+node "应用服务器" {
+  component "Spring Boot Backend\n:8080"
+  component "FastAPI AI Service\n:8000"
+  component "Prometheus\n:9090"
+  component "Blackbox Exporter\n:9115"
+}
+
+node "数据服务器" {
+  database "MySQL\n:3306"
+  database "Redis\n:6379"
+  database "Chroma / Vector DB"
+}
+
+node "虚拟设备实验环境" {
+  component "Linux VM\nnode_exporter :9100"
+  component "Windows VM\nwindows_exporter :9182"
+  component "Web/App Service\nHTTP/TCP"
+  component "SNMP Simulator\n:161"
+}
+
+cloud "大模型服务" {
+  component "OpenAI-compatible API"
+}
+
+"用户浏览器" --> "Spring Boot Backend\n:8080" : HTTPS/HTTP REST
+"用户浏览器" --> "Vue3 前端页面" : 访问页面
+"Spring Boot Backend\n:8080" --> "MySQL\n:3306" : JDBC
+"Spring Boot Backend\n:8080" --> "Redis\n:6379" : Cache
+"Spring Boot Backend\n:8080" --> "FastAPI AI Service\n:8000" : REST
+"Spring Boot Backend\n:8080" --> "Prometheus\n:9090" : HTTP API
+"Prometheus\n:9090" --> "Linux VM\nnode_exporter :9100" : scrape
+"Prometheus\n:9090" --> "Windows VM\nwindows_exporter :9182" : scrape
+"Prometheus\n:9090" --> "Blackbox Exporter\n:9115" : probe
+"Blackbox Exporter\n:9115" --> "Web/App Service\nHTTP/TCP" : HTTP/TCP/ICMP
+"Prometheus\n:9090" --> "SNMP Simulator\n:161" : SNMP exporter可选
+"FastAPI AI Service\n:8000" --> "Chroma / Vector DB" : 向量检索
+"FastAPI AI Service\n:8000" --> "OpenAI-compatible API" : 模型调用
+@enduml

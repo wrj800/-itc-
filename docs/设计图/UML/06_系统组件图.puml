@@ -1,0 +1,68 @@
+@startuml
+package "前端应用" {
+  [Vue3 Admin]
+  [ECharts Dashboard]
+}
+
+package "后端业务服务" {
+  [Auth Module]
+  [Device Module]
+  [Collector Module]
+  [Alarm Module]
+  [WorkOrder Module]
+  [Knowledge Module]
+}
+
+package "监控采集层" {
+  [Prometheus Adapter]
+  [Blackbox Adapter]
+  [SNMP Adapter]
+  [Fault Injection]
+}
+
+package "AI服务" {
+  [Log Analyzer]
+  [Diagnosis Service]
+  [RAG Service]
+  [Document Parser]
+}
+
+database "MySQL" as MySQL
+database "Redis" as Redis
+database "Vector DB" as VectorDB
+database "Prometheus" as Prometheus
+cloud "LLM API" as LLM
+
+[Vue3 Admin] --> [Auth Module]
+[Vue3 Admin] --> [Device Module]
+[Vue3 Admin] --> [Collector Module]
+[Vue3 Admin] --> [Alarm Module]
+[Vue3 Admin] --> [WorkOrder Module]
+[Vue3 Admin] --> [Knowledge Module]
+[ECharts Dashboard] --> [Device Module]
+[ECharts Dashboard] --> [Alarm Module]
+
+[Auth Module] --> MySQL
+[Auth Module] --> Redis
+[Device Module] --> MySQL
+[Collector Module] --> MySQL
+[Collector Module] --> [Prometheus Adapter]
+[Collector Module] --> [Blackbox Adapter]
+[Collector Module] --> [SNMP Adapter]
+[Collector Module] --> [Fault Injection]
+[Alarm Module] --> MySQL
+[WorkOrder Module] --> MySQL
+[Knowledge Module] --> MySQL
+[Knowledge Module] --> [RAG Service]
+[Alarm Module] --> [Log Analyzer]
+[WorkOrder Module] --> [Diagnosis Service]
+
+[Log Analyzer] --> LLM
+[Diagnosis Service] --> LLM
+[RAG Service] --> VectorDB
+[RAG Service] --> LLM
+[Document Parser] --> VectorDB
+[Prometheus Adapter] --> Prometheus
+[Blackbox Adapter] --> Prometheus
+[SNMP Adapter] --> Prometheus
+@enduml

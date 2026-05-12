@@ -1,0 +1,22 @@
+@startuml
+actor "运维人员" as Operator
+participant "前端页面" as Frontend
+participant "Spring Boot后端" as Backend
+participant "采集适配器" as Collector
+database "Prometheus" as Prometheus
+participant "node_exporter" as Exporter
+database "MySQL" as DB
+
+Operator -> Frontend : 打开监控大屏
+Frontend -> Backend : GET /api/dashboard/latest-metrics
+Backend -> Collector : queryMetrics(deviceId)
+Collector -> Prometheus : /api/v1/query?query=PromQL
+Prometheus -> Exporter : scrape metrics
+Exporter --> Prometheus : CPU/内存/磁盘/网络指标
+Prometheus --> Collector : 指标查询结果
+Collector -> Collector : 统一指标格式转换
+Collector --> Backend : 返回设备指标
+Backend -> DB : 保存最新指标
+Backend --> Frontend : 返回大屏数据
+Frontend --> Operator : 展示真实采集指标
+@enduml

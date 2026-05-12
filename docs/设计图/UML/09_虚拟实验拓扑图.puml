@@ -1,0 +1,46 @@
+@startuml
+skinparam rectangle {
+  RoundCorner 10
+}
+
+rectangle "Windows宿主机" {
+  rectangle "VirtualBox / VMware" {
+    rectangle "ops-manager\n192.168.56.10" {
+      component "Spring Boot"
+      component "Vue 3"
+      component "FastAPI"
+      component "MySQL"
+      component "Redis"
+      component "Prometheus"
+      component "Blackbox Exporter"
+    }
+
+    rectangle "linux-server-01\n192.168.56.21" {
+      component "node_exporter"
+      component "nginx 可选"
+    }
+
+    rectangle "linux-server-02\n192.168.56.22" {
+      component "node_exporter"
+      component "故障注入脚本"
+    }
+
+    rectangle "app-node\n192.168.56.30" {
+      component "Web服务"
+      component "数据库服务可选"
+    }
+
+    rectangle "sim-device\n192.168.56.40" {
+      component "SNMP Simulator"
+      component "Syslog脚本"
+    }
+  }
+}
+
+"Prometheus" --> "node_exporter" : scrape :9100
+"Prometheus" --> "Blackbox Exporter" : probe
+"Blackbox Exporter" --> "Web服务" : HTTP/TCP
+"Spring Boot" --> "Prometheus" : HTTP API
+"Spring Boot" --> "FastAPI" : AI诊断/RAG
+"FastAPI" --> "Syslog脚本" : 日志分析输入
+@enduml

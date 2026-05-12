@@ -1,0 +1,22 @@
+@startuml
+actor "用户" as User
+participant "前端页面" as Frontend
+participant "Spring Boot后端" as Backend
+participant "FastAPI AI服务" as AI
+database "MySQL" as MySQL
+database "向量数据库" as VectorDB
+participant "大模型API" as LLM
+
+User -> Frontend : 输入问题
+Frontend -> Backend : POST /api/knowledge/ask
+Backend -> MySQL : 保存问题记录
+Backend -> AI : POST /knowledge/ask
+AI -> VectorDB : 相似度检索
+VectorDB --> AI : 返回相关文档片段
+AI -> LLM : 携带问题和文档片段生成回答
+LLM --> AI : 返回回答
+AI --> Backend : 答案和引用来源
+Backend -> MySQL : 保存答案和引用
+Backend --> Frontend : 返回问答结果
+Frontend --> User : 展示答案与来源
+@enduml

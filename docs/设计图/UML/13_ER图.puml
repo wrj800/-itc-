@@ -1,0 +1,118 @@
+@startuml
+hide circle
+skinparam linetype ortho
+
+entity "sys_user" as user {
+  * id : bigint
+  --
+  username : varchar
+  real_name : varchar
+  status : varchar
+}
+
+entity "sys_role" as role {
+  * id : bigint
+  --
+  role_code : varchar
+  role_name : varchar
+}
+
+entity "ict_device" as device {
+  * id : bigint
+  --
+  device_code : varchar
+  device_name : varchar
+  device_type : varchar
+  ip_address : varchar
+  status : varchar
+}
+
+entity "monitor_target" as target {
+  * id : bigint
+  --
+  device_id : bigint
+  target_name : varchar
+  endpoint : varchar
+  collect_method : varchar
+  status : varchar
+}
+
+entity "metric_rule" as rule {
+  * id : bigint
+  --
+  target_id : bigint
+  metric_name : varchar
+  promql : text
+  threshold_value : decimal
+}
+
+entity "device_metric" as metric {
+  * id : bigint
+  --
+  device_id : bigint
+  cpu_usage : decimal
+  memory_usage : decimal
+  disk_usage : decimal
+  collected_time : datetime
+}
+
+entity "alarm_record" as alarm {
+  * id : bigint
+  --
+  device_id : bigint
+  alarm_title : varchar
+  alarm_level : varchar
+  status : varchar
+}
+
+entity "work_order" as ticket {
+  * id : bigint
+  --
+  alarm_id : bigint
+  order_no : varchar
+  assignee_id : bigint
+  status : varchar
+}
+
+entity "work_order_log" as ticket_log {
+  * id : bigint
+  --
+  work_order_id : bigint
+  operator_id : bigint
+  action : varchar
+}
+
+entity "knowledge_document" as doc {
+  * id : bigint
+  --
+  file_name : varchar
+  parse_status : varchar
+}
+
+entity "knowledge_chunk" as chunk {
+  * id : bigint
+  --
+  document_id : bigint
+  chunk_index : int
+  vector_id : varchar
+}
+
+entity "ai_qa_record" as qa {
+  * id : bigint
+  --
+  user_id : bigint
+  question : text
+  answer : text
+}
+
+user }o--o{ role : 用户角色
+device ||--o{ target : 配置
+target ||--o{ rule : 规则
+device ||--o{ metric : 产生
+device ||--o{ alarm : 产生
+alarm ||--o| ticket : 转为
+ticket ||--o{ ticket_log : 包含
+user ||--o{ ticket : 处理
+doc ||--o{ chunk : 切片
+user ||--o{ qa : 提问
+@enduml

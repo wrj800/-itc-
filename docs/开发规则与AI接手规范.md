@@ -258,7 +258,11 @@ PlantUML + Graphviz
 4. 所有页面必须兼顾 1366px 桌面和移动窄屏基本可用。
 5. 登录页已拆分到 `frontend/src/components/LoginView.vue`，后续接真实认证、JWT 和登录校验时优先改该组件，不要把登录表单重新堆回 `App.vue`。
 6. 顶部工具栏和页面动作按钮必须保持文字单行显示，不能出现“刷新”“导出报表”等短按钮上下断行。
-7. 前端新增页面后必须执行：
+7. 页面组件已经从 `App.vue` 拆到 `frontend/src/components/admin/*`、`frontend/src/components/maintainer/*` 和 `frontend/src/components/common/render.ts`，后续不要把管理员页面、维护人员页面、KPI、表格、看板等大段渲染逻辑重新塞回 `App.vue`。
+8. `App.vue` 的职责控制在应用外壳、登录态、导航状态、接口编排和页面挂载；新增业务页面应优先新建独立组件或页面文件。
+9. 前端业务类型统一维护在 `frontend/src/types/ops.ts`，新增接口字段或页面数据结构时先补类型，再改组件。
+10. 后端不可用时，前端允许保留演示数据兜底，保证截图和答辩演示不白屏；但真实接口接通后必须优先使用后端数据，并在文档中说明兜底边界。
+11. 前端新增页面后必须执行：
 
 ```powershell
 cd E:\.AA毕业设计\10_项目源码\frontend

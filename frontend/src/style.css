@@ -42,9 +42,9 @@ button {
 .login-hero {
   position: relative;
   display: grid;
-  grid-template-rows: auto auto auto minmax(250px, 1fr) auto;
-  gap: 20px;
-  padding: 62px 72px 38px;
+  grid-template-rows: auto auto auto minmax(236px, 1fr) auto;
+  gap: 14px;
+  padding: 44px 72px 26px;
 }
 
 .login-hero::before {
@@ -93,16 +93,16 @@ button {
 .login-brand strong {
   display: block;
   color: #07162a;
-  font-size: 36px;
+  font-size: 34px;
   font-weight: 900;
   letter-spacing: 0;
 }
 
 .login-brand small {
   display: block;
-  margin-top: 12px;
+  margin-top: 8px;
   color: #5a6a7e;
-  font-size: 18px;
+  font-size: 17px;
 }
 
 .role-switch {
@@ -143,21 +143,21 @@ button {
 }
 
 .hero-copy h1 {
-  margin: 0 0 14px;
+  margin: 0 0 10px;
   color: #07162a;
-  font-size: 44px;
+  font-size: 40px;
   line-height: 1.08;
 }
 
 .hero-copy span {
   color: #53677e;
-  font-size: 18px;
-  line-height: 1.8;
+  font-size: 17px;
+  line-height: 1.65;
 }
 
 .ops-visual {
-  min-height: 300px;
-  margin-top: 2px;
+  min-height: 246px;
+  margin-top: 0;
 }
 
 .ops-visual::before {
@@ -237,7 +237,7 @@ button {
 
 .node-card.bottom {
   left: 44%;
-  bottom: 6px;
+  bottom: 2px;
 }
 
 .core-device {
@@ -323,10 +323,11 @@ button {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 168px));
   gap: 14px;
+  align-self: end;
 }
 
 .login-stats article {
-  padding: 18px;
+  padding: 14px 16px;
   border: 1px solid #dce5ee;
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.88);
@@ -336,19 +337,21 @@ button {
 .login-stats strong {
   display: block;
   color: #07162a;
-  font-size: 26px;
+  font-size: 24px;
+  line-height: 1.1;
 }
 
 .login-stats span {
-  margin-top: 6px;
+  margin-top: 4px;
   display: block;
   color: #6c7d90;
+  line-height: 1.2;
 }
 
 .login-panel {
   display: grid;
   align-items: center;
-  padding: 52px 64px 52px 0;
+  padding: 40px 64px 40px 0;
 }
 
 .login-card {
@@ -356,8 +359,8 @@ button {
   grid-template-rows: auto 1fr auto auto;
   gap: 22px;
   width: 100%;
-  min-height: 562px;
-  padding: 40px;
+  min-height: 530px;
+  padding: 36px 40px;
   border: 1px solid #d5dfeb;
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.94);
@@ -368,8 +371,8 @@ button {
   display: flex;
   align-items: center;
   gap: 16px;
-  min-height: 76px;
-  padding-bottom: 20px;
+  min-height: 70px;
+  padding-bottom: 16px;
   border-bottom: 1px solid #e3ebf2;
 }
 
@@ -383,7 +386,7 @@ button {
 
 .login-card-title h2 {
   margin: 0;
-  font-size: 28px;
+  font-size: 27px;
   line-height: 1.2;
   white-space: nowrap;
 }
@@ -398,13 +401,13 @@ button {
 .login-form-grid {
   display: grid;
   align-content: start;
-  gap: 16px;
+  gap: 14px;
 }
 
 .login-field {
   display: grid;
   gap: 8px;
-  min-height: 78px;
+  min-height: 74px;
   margin: 0;
   color: #13243b;
   font-weight: 800;
@@ -422,7 +425,7 @@ button {
 .login-field input,
 .login-field select {
   width: 100%;
-  height: 52px;
+  height: 50px;
   padding: 0 16px;
   border: 1px solid #d4dfeb;
   border-radius: 8px;
@@ -478,7 +481,7 @@ button {
 
 .login-submit {
   width: 100%;
-  height: 52px;
+  height: 50px;
   font-size: 16px;
   font-weight: 900;
 }
@@ -705,6 +708,7 @@ button {
   justify-content: space-between;
   gap: 16px;
   margin-bottom: 14px;
+  min-height: 58px;
 }
 
 .page-heading h1 {
@@ -723,6 +727,7 @@ button {
   display: flex;
   align-items: center;
   gap: 10px;
+  min-height: 36px;
 }
 
 .page-grid {
@@ -809,12 +814,16 @@ button {
 }
 
 .metric-tile {
-  display: grid;
-  grid-template-columns: 42px minmax(86px, 1fr) 76px;
+  display: flex;
   align-items: center;
   gap: 10px;
   min-height: 94px;
   padding: 14px;
+}
+
+.metric-main {
+  min-width: 0;
+  flex: 1 1 auto;
 }
 
 .metric-icon {
@@ -854,11 +863,11 @@ button {
 
 .metric-main span {
   display: block;
-  max-width: 96px;
   color: #52687f;
   font-size: 13px;
   font-weight: 800;
   line-height: 1.25;
+  white-space: nowrap;
 }
 
 .metric-main strong {
@@ -883,6 +892,7 @@ button {
 }
 
 .spark {
+  flex: 0 0 auto;
   width: 78px;
   height: 28px;
 }
@@ -1567,7 +1577,7 @@ button {
 }
 
 .maintainer-desk {
-  grid-template-columns: minmax(0, 1fr) 420px;
+  grid-template-columns: minmax(0, 1fr) 390px;
   align-items: start;
 }
 
@@ -1584,8 +1594,8 @@ button {
 }
 
 .shift-brief div {
-  min-height: 72px;
-  padding: 12px 14px;
+  min-height: 66px;
+  padding: 10px 12px;
   border: 1px solid #dbe4ee;
   border-radius: 6px;
   background: #ffffff;
@@ -1633,11 +1643,10 @@ button {
 }
 
 .maintainer-desk .metric-tile {
-  grid-template-columns: 40px minmax(88px, 1fr) 62px;
   gap: 8px;
-  min-height: 86px;
-  height: 98px;
-  padding: 12px;
+  min-height: 82px;
+  height: 88px;
+  padding: 10px 12px;
 }
 
 .maintainer-desk .metric-main span {
@@ -1661,8 +1670,8 @@ button {
 
 .action-detail textarea {
   width: 100%;
-  min-height: 60px;
-  padding: 12px;
+  min-height: 54px;
+  padding: 10px;
   border: 1px solid #d8e3ee;
   border-radius: 6px;
   resize: vertical;
@@ -1676,8 +1685,8 @@ button {
 
 .diagnosis-card {
   display: grid;
-  gap: 10px;
-  padding: 14px;
+  gap: 8px;
+  padding: 12px;
   border-radius: 6px;
   background: #f3faf8;
 }
@@ -1734,11 +1743,11 @@ button {
 
 .incident-desc {
   margin: 0 0 10px;
-  padding: 9px 10px;
+  padding: 8px 10px;
   border-radius: 6px;
   background: #f7fafc;
   color: #425871;
-  line-height: 1.6;
+  line-height: 1.5;
 }
 
 .work-actions {
@@ -1787,13 +1796,6 @@ button {
 }
 
 @media (max-width: 1280px) {
-  .kpi-row,
-  .kpi-row.four,
-  .ops-command-bar,
-  .shift-brief {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
   .admin-overview,
   .resources-page,
   .alerts-page,
@@ -1853,6 +1855,8 @@ button {
   }
 
   .metric-tile,
+  .kpi-row,
+  .kpi-row.four,
   .kanban-board,
   .kanban-board.compact,
   .detail-grid,

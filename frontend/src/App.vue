@@ -139,22 +139,39 @@
 <script setup lang="ts">
 import { computed, defineComponent, h, onMounted, ref } from 'vue';
 import { ElMessage } from 'element-plus';
-import LoginView, { type LoginRole } from './components/LoginView.vue';
+import LoginView from './components/LoginView.vue';
+import { AdminAlerts } from './components/admin/AdminAlerts';
+import { AdminDashboard } from './components/admin/AdminDashboard';
+import { AdminResources } from './components/admin/AdminResources';
+import { AdminTickets } from './components/admin/AdminTickets';
+import { MaintainerAlerts } from './components/maintainer/MaintainerAlerts';
+import { MaintainerDevices } from './components/maintainer/MaintainerDevices';
+import { MaintainerDesk } from './components/maintainer/MaintainerDesk';
+import { panelHead } from './components/common/render';
+import type {
+  AdminView,
+  ApiResponse,
+  AlertEvent,
+  Asset,
+  Diagnosis,
+  MaintainerView,
+  MonitorTarget,
+  NodeInfo,
+  Overview,
+  Role,
+  ViewKey,
+  WorkOrder
+} from './types/ops';
 import {
   ArrowDown,
   Bell,
   Box,
-  Briefcase,
-  CircleCheck,
   CirclePlus,
-  Cpu,
-  DataAnalysis,
   Document,
   Download,
   Fold,
   Histogram,
   House,
-  Lightning,
   MagicStick,
   Monitor,
   Operation,
@@ -162,501 +179,8 @@ import {
   Search,
   Setting,
   SwitchButton,
-  Tickets,
-  Warning
+  Tickets
 } from '@element-plus/icons-vue';
-
-type Role = LoginRole;
-type AdminView = 'overview' | 'monitor' | 'assets' | 'alerts' | 'tickets' | 'automation' | 'reports' | 'settings';
-type MaintainerView = 'myTickets' | 'todoAlerts' | 'deviceStatus' | 'records';
-type ViewKey = AdminView | MaintainerView;
-
-type ApiResponse<T> = {
-  code: number;
-  message: string;
-  data: T;
-};
-
-type Overview = {
-  totalAssets: number;
-  onlineAssets: number;
-  activeAlerts: number;
-  openWorkOrders: number;
-  targetAvailability: number;
-};
-
-type Asset = {
-  id: string;
-  name: string;
-  type: string;
-  model: string;
-  address: string;
-  status: string;
-  location: string;
-  collector: string;
-};
-
-type MonitorTarget = {
-  id: string;
-  name: string;
-  endpoint: string;
-  source: string;
-  status: string;
-  latencyMs: number;
-};
-
-type AlertEvent = {
-  id: string;
-  assetId: string;
-  title: string;
-  severity: string;
-  status: string;
-  metric: string;
-  summary: string;
-};
-
-type WorkOrder = {
-  id: string;
-  alertId: string;
-  title: string;
-  category: string;
-  status: string;
-  assignee: string;
-  description: string;
-};
-
-type Diagnosis = {
-  severity: string;
-  possibleCauses: string[];
-  recommendedActions: string[];
-  conclusion: string;
-};
-
-type NodeInfo = {
-  nodename?: string;
-  sysname?: string;
-  machine?: string;
-  release?: string;
-};
-
-const Sparkline = defineComponent({
-  name: 'Sparkline',
-  props: {
-    tone: { type: String, default: 'teal' }
-  },
-  setup(props) {
-    const points = props.tone === 'orange'
-      ? '0,22 12,15 24,18 36,10 48,13 60,8 72,19 84,11 96,16 108,12'
-      : props.tone === 'blue'
-        ? '0,20 12,13 24,18 36,9 48,15 60,11 72,12 84,14 96,12 108,15'
-        : '0,18 12,16 24,19 36,12 48,18 60,8 72,16 84,11 96,14 108,9';
-    return () => h('svg', { class: `spark ${props.tone}`, viewBox: '0 0 108 28' }, [
-      h('polyline', { points, fill: 'none', stroke: 'currentColor', 'stroke-width': '2.2', 'stroke-linecap': 'round', 'stroke-linejoin': 'round' })
-    ]);
-  }
-});
-
-const StatusDot = defineComponent({
-  name: 'StatusDot',
-  props: {
-    status: { type: String, required: true }
-  },
-  setup(props) {
-    return () => h('span', { class: ['status-dot', props.status] });
-  }
-});
-
-const MiniTrend = defineComponent({
-  name: 'MiniTrend',
-  setup() {
-    return () => h('div', { class: 'mini-trend' }, [
-      h('div', { style: 'height:46%' }),
-      h('div', { style: 'height:68%' }),
-      h('div', { style: 'height:54%' }),
-      h('div', { style: 'height:76%' }),
-      h('div', { style: 'height:60%' }),
-      h('div', { style: 'height:82%' }),
-      h('div', { style: 'height:52%' })
-    ]);
-  }
-});
-
-const AdminDashboard = defineComponent({
-  name: 'AdminDashboard',
-  components: { Sparkline, StatusDot },
-  props: {
-    overview: { type: Object as () => Overview, required: true },
-    alerts: { type: Array as () => AlertEvent[], required: true },
-    assets: { type: Array as () => Asset[], required: true },
-    targets: { type: Array as () => MonitorTarget[], required: true },
-    workOrders: { type: Array as () => WorkOrder[], required: true }
-  },
-  setup(props) {
-    return () => h('div', { class: 'page-grid admin-overview' }, [
-      h('section', { class: 'ops-command-bar' }, [
-        commandItem('采集状态', 'Prometheus / Blackbox / Node Exporter', '全部在线', 'green'),
-        commandItem('告警管道', '规则评估、事件归并、工单联动', '运行中', 'blue'),
-        commandItem('SLA 风险', '紧急 2 个，重要 8 个', '需关注', 'orange'),
-        commandItem('最近同步', '2026-05-13 09:30:18', '30s 前', 'teal')
-      ]),
-      h('section', { class: 'kpi-row' }, [
-        metricCard('在线设备', String(Math.max(props.overview.onlineAssets, 116)), '+3.31%', 'teal', Monitor),
-        metricCard('活跃告警', String(Math.max(props.overview.activeAlerts, 9)), '-17.65%', 'orange', Bell),
-        metricCard('今日工单', String(Math.max(props.overview.openWorkOrders, 23)), '+12.00%', 'blue', Document),
-        metricCard('服务可用率', `${props.overview.targetAvailability || 99.95}%`, '+0.02%', 'green', CircleCheck),
-        metricCard('自动化成功率', '98.61%', '-0.35%', 'blue', MagicStick)
-      ]),
-      h('section', { class: 'panel service-health' }, [
-        panelHead('核心服务健康度', '关键链路实时状态'),
-        simpleTable(['服务名称', '状态', '响应时间', '可用率'], [
-          ['API 网关', '正常', '12ms', '99.98%'],
-          ['CMDB', '正常', '18ms', '99.99%'],
-          ['日志采集', '正常', '25ms', '99.90%'],
-          ['监控引擎', '正常', '15ms', '99.97%'],
-          ['数据库集群', '正常', '8ms', '99.99%']
-        ])
-      ]),
-      h('section', { class: 'panel trend-panel' }, [
-        panelHead('近 24 小时告警趋势', '按等级聚合'),
-        trendChart()
-      ]),
-      h('section', { class: 'panel donut-panel' }, [
-        panelHead('告警级别分布', '当前活跃告警'),
-        h('div', { class: 'donut-wrap' }, [
-          h('div', { class: 'donut' }, [h('span', '总计'), h('strong', String(Math.max(props.alerts.length, 28)))]),
-          h('ul', { class: 'legend' }, [
-            legendItem('紧急', '2 (7.14%)', 'red'),
-            legendItem('重要', '8 (28.57%)', 'orange'),
-            legendItem('一般', '12 (42.86%)', 'blue'),
-            legendItem('提示', '6 (21.43%)', 'green')
-          ])
-        ])
-      ]),
-      h('section', { class: 'panel resource-panel' }, [
-        panelHead('资源使用概览', '生产环境'),
-        h('div', { class: 'resource-grid' }, [
-          usageCard('CPU 使用率', '32.6%', 'green'),
-          usageCard('内存使用率', '64.8%', 'blue'),
-          usageCard('磁盘使用率', '71.3%', 'purple'),
-          usageCard('网络吞吐（出）', '154.6 Mbps', 'teal')
-        ])
-      ]),
-      h('section', { class: 'panel latest-alerts' }, [
-        panelHead('最新告警', '查看更多'),
-        simpleTable(['级别', '告警名称', '来源对象', '状态'], props.alerts.slice(0, 5).map((alert) => [
-          alert.severity,
-          alert.title,
-          alert.assetId,
-          statusLabel(alert.status)
-        ]))
-      ]),
-      h('section', { class: 'panel tickets-panel' }, [
-        panelHead('待处理工单', '按状态分组'),
-        h('div', { class: 'ticket-mini-columns' }, [
-          ticketColumn('待分派', props.workOrders.filter((item) => item.status === 'open')),
-          ticketColumn('处理中', props.workOrders.filter((item) => item.status === 'processing')),
-          ticketColumn('待验证', [])
-        ])
-      ]),
-      h('section', { class: 'panel wide-table automation-table' }, [
-        panelHead('最近自动化任务执行记录', '查看更多'),
-        simpleTable(['任务名称', '目标范围', '执行结果', '执行时间', '操作人'], [
-          ['日常健康检查', '全网设备', '成功', '2025-05-20 10:30:02', 'system'],
-          ['配置备份', '核心网络设备', '成功', '2025-05-20 10:00:01', 'system'],
-          ['日志清理', '日志服务器集群', '成功', '2025-05-20 09:30:01', 'system'],
-          ['安全漏洞扫描', 'Web 应用集群', '部分成功', '2025-05-20 09:00:03', 'system']
-        ])
-      ])
-    ]);
-  }
-});
-
-const AdminResources = defineComponent({
-  name: 'AdminResources',
-  components: { MiniTrend },
-  props: {
-    assets: { type: Array as () => Asset[], required: true },
-    targets: { type: Array as () => MonitorTarget[], required: true }
-  },
-  setup(props) {
-    return () => h('div', { class: 'page-grid resources-page' }, [
-      h('section', { class: 'kpi-row' }, [
-        metricCard('资源总数', String(Math.max(props.assets.length, 2568)), '+3.21%', 'teal', Briefcase),
-        metricCard('在线主机', String(props.assets.filter((item) => item.status === 'online').length || 1892), '+2.18%', 'green', Monitor),
-        metricCard('网络设备', '218', '+1.40%', 'blue', Box),
-        metricCard('数据库实例', '136', '+0.74%', 'purple', DataAnalysis),
-        metricCard('异常资源', String(props.assets.filter((item) => item.status !== 'online').length || 38), '-11.63%', 'red', Warning)
-      ]),
-      h('section', { class: 'panel asset-table-panel' }, [
-        panelHead('资源列表', '按环境、状态和责任人筛选'),
-        simpleTable(['资源名称', 'IP 地址', '资源类型', '所属集群/项目', '状态', '最近巡检', '责任人', '操作'], props.assets.map((asset) => [
-          asset.name,
-          asset.address,
-          asset.type,
-          asset.location,
-          statusLabel(asset.status),
-          '2025-05-20 10:21',
-          asset.id.includes('wsl') ? '张伟' : '李娜',
-          '详情  监控  更多'
-        ]))
-      ]),
-      h('section', { class: 'panel asset-detail' }, [
-        panelHead('资源详情', 'web-prod-01'),
-        h('div', { class: 'detail-grid' }, [
-          h('div', [h('h3', '基础信息'), detailLine('资源名称', 'web-prod-01'), detailLine('IP 地址', '10.10.1.11'), detailLine('操作系统', 'Ubuntu 22.04 LTS'), detailLine('责任人', '张伟')]),
-          h('div', [h('h3', '运行状态'), detailLine('状态', '正常'), detailLine('CPU 使用率', '24.6%'), detailLine('内存使用率', '45.3%'), detailLine('网络流入', '128.6 Mbps')]),
-          h('div', [h('h3', 'CPU / 内存趋势'), h(MiniTrend)])
-        ]),
-        h('div', { class: 'sub-panels' }, [
-          h('article', [h('h3', '最近告警'), h('p', '磁盘使用率过高  重要')]),
-          h('article', [h('h3', '关联服务'), h('p', 'portal-web-service  正常')])
-        ])
-      ]),
-      h('section', { class: 'panel wide-table' }, [
-        panelHead('资源分组与容量概览', '生产环境'),
-        h('div', { class: 'capacity-row' }, [
-          ringCard('42.6%', 'CPU 已用 542.6 / 1280 核', 'teal'),
-          ringCard('58.3%', '内存已用 1.82 / 3.12 TB', 'blue'),
-          ringCard('61.7%', '磁盘已用 48.3 / 78.3 TB', 'orange'),
-          ringCard('37.9%', '带宽已用 3.79 / 10 Gbps', 'purple')
-        ])
-      ])
-    ]);
-  }
-});
-
-const AdminAlerts = defineComponent({
-  name: 'AdminAlerts',
-  props: {
-    alerts: { type: Array as () => AlertEvent[], required: true }
-  },
-  emits: ['createTicket'],
-  setup(props, { emit }) {
-    return () => h('div', { class: 'page-grid alerts-page' }, [
-      h('section', { class: 'kpi-row four' }, [
-        metricCard('当前活跃告警', '128', '+18.52%', 'red', Bell),
-        metricCard('24h 新增告警', '342', '+22.18%', 'orange', Document),
-        metricCard('已恢复告警', '214', '-8.76%', 'green', CircleCheck),
-        metricCard('误报率', '2.35%', '-0.48%', 'blue', Warning)
-      ]),
-      h('section', { class: 'panel alert-trend' }, [panelHead('告警趋势', '近 24 小时告警变化'), trendChart()]),
-      h('section', { class: 'panel alert-source' }, [
-        panelHead('告警来源分布', '按对象类型'),
-        h('div', { class: 'bar-list' }, [
-          barItem('主机监控', 92, 'red'),
-          barItem('网络设备', 72, 'orange'),
-          barItem('数据库', 42, 'blue'),
-          barItem('中间件', 28, 'green')
-        ])
-      ]),
-      h('section', { class: 'panel alert-table' }, [
-        panelHead('告警列表', '统一告警接入、关联分析与闭环处理'),
-        simpleTable(['级别', '告警名称', '来源对象', '对象 IP', '状态', '处理人', '操作'], props.alerts.map((alert) => [
-          alert.severity,
-          alert.title,
-          alert.assetId,
-          '10.10.20.15',
-          statusLabel(alert.status),
-          alert.status === 'processing' ? '李四' : '-',
-          '处理  派单  更多'
-        ])),
-        h('button', { class: 'primary-button table-action', onClick: () => emit('createTicket', props.alerts[0]) }, '选中告警转工单')
-      ]),
-      h('aside', { class: 'panel alert-detail' }, [
-        panelHead('告警详情', '应用服务响应超时告警'),
-        detailLine('状态', '未处理'),
-        detailLine('首次发生', '2025-05-20 10:21:35'),
-        detailLine('持续时长', '2 小时 18 分'),
-        h('h3', '处理建议'),
-        h('ol', [h('li', '检查订单服务健康状态'), h('li', '查看应用日志定位慢接口'), h('li', '必要时进行服务重启或扩容')])
-      ])
-    ]);
-  }
-});
-
-const AdminTickets = defineComponent({
-  name: 'AdminTickets',
-  props: {
-    workOrders: { type: Array as () => WorkOrder[], required: true }
-  },
-  setup(props) {
-    return () => h('div', { class: 'page-grid tickets-page' }, [
-      h('section', { class: 'kpi-row' }, [
-        metricCard('待处理工单', String(props.workOrders.filter((item) => item.status === 'open').length || 32), '-20.00%', 'teal', Tickets),
-        metricCard('处理中工单', String(props.workOrders.filter((item) => item.status === 'processing').length || 58), '+7.41%', 'blue', Document),
-        metricCard('即将超时', '9', '-10.00%', 'orange', Warning),
-        metricCard('已完成', '128', '+18.52%', 'green', CircleCheck),
-        metricCard('平均处理时长', '2.6 小时', '-12.50%', 'gray', Operation)
-      ]),
-      h('section', { class: 'panel kanban-panel' }, [
-        panelHead('工单看板', '按状态推进'),
-        h('div', { class: 'kanban-board' }, [
-          kanbanColumn('待分派', props.workOrders.filter((item) => item.status === 'open')),
-          kanbanColumn('处理中', props.workOrders.filter((item) => item.status === 'processing')),
-          kanbanColumn('待验证', []),
-          kanbanColumn('已完成', [])
-        ])
-      ]),
-      h('section', { class: 'panel ticket-table' }, [
-        panelHead('工单列表', '按 SLA 和责任组筛选'),
-        simpleTable(['工单编号', '标题', '类型', '优先级', '状态', '发起人', '处理人', 'SLA'], props.workOrders.map((order) => [
-          order.id,
-          order.title,
-          order.category,
-          order.category === 'network' ? '高' : '中',
-          statusLabel(order.status),
-          '系统',
-          order.assignee,
-          '8小时内'
-        ]))
-      ]),
-      h('aside', { class: 'panel ticket-detail' }, [
-        panelHead('工单详情', '安全补丁更新'),
-        detailLine('工单编号', '202505200301'),
-        detailLine('优先级', '高'),
-        detailLine('状态', '处理中'),
-        detailLine('责任组', '运维一组'),
-        h('div', { class: 'sla-bar' }, h('span', { style: 'width:90%' })),
-        h('h3', '处理流程'),
-        h('ul', { class: 'process-list' }, [h('li', '工单创建'), h('li', '工单分派'), h('li', '开始处理'), h('li', '更新补丁')])
-      ])
-    ]);
-  }
-});
-
-const MaintainerDesk = defineComponent({
-  name: 'MaintainerDesk',
-  props: {
-    workOrders: { type: Array as () => WorkOrder[], required: true },
-    diagnosis: { type: Object as () => Diagnosis | null, default: null },
-    diagnosing: { type: Boolean, default: false },
-    question: { type: String, required: true }
-  },
-  emits: ['diagnose', 'update:question'],
-  setup(props, { emit }) {
-    return () => h('div', { class: 'page-grid maintainer-desk' }, [
-      h('section', { class: 'maintainer-main' }, [
-        h('section', { class: 'shift-brief' }, [
-          h('div', [h('span', '当前班组'), h('strong', '运维一组 / 白班')]),
-          h('div', [h('span', '负责范围'), h('strong', '核心网络、Linux 节点、BMC 仿真')]),
-          h('div', [h('span', '交接状态'), h('strong', '3 条待跟进记录')]),
-          h('div', [h('span', '升级通道'), h('strong', 'P1 15 分钟内响应')])
-        ]),
-        h('section', { class: 'kpi-row four' }, [
-          metricCard('待处理工单', String(props.workOrders.length || 7), '-2', 'blue', Tickets),
-          metricCard('即将超时', '2', '+1', 'orange', Warning),
-          metricCard('今日已完成', '11', '+3', 'green', CircleCheck),
-          metricCard('平均响应', '8分钟', '-2分钟', 'blue', Lightning)
-        ]),
-        h('section', { class: 'panel my-kanban' }, [
-          panelHead('我的工单', '只显示当前维护人员相关任务'),
-          h('div', { class: 'kanban-board compact maintainer-board' }, [
-            kanbanColumn('待接单', props.workOrders.filter((item) => item.status === 'open')),
-            kanbanColumn('处理中', props.workOrders.filter((item) => item.status === 'processing')),
-            kanbanColumn('待验证', []),
-            kanbanColumn('已完成', [])
-          ])
-        ])
-      ]),
-      h('aside', { class: 'panel action-detail' }, [
-        panelHead('工单详情', 'AI 辅助诊断'),
-        h('div', { class: 'incident-title' }, [
-          h('span', '紧急'),
-          h('strong', 'WO-20260512-1001'),
-          h('em', '处理中')
-        ]),
-        detailLine('优先级', '紧急'),
-        detailLine('状态', '处理中'),
-        detailLine('SLA 剩余时间', '01:18:15'),
-        detailLine('关联告警', 'INC20260512088'),
-        detailLine('告警来源', 'Zabbix / 监控告警'),
-        detailLine('关联设备', '核心交换机 core-sw-01'),
-        h('h3', '故障描述'),
-        h('p', { class: 'incident-desc' }, 'CPU 使用率持续高于 92%，部分业务访问出现延迟，需要优先排查接口流量与设备负载。'),
-        h('h3', 'AI 诊断建议'),
-        h('textarea', {
-          value: props.question,
-          onInput: (event: Event) => emit('update:question', (event.target as HTMLTextAreaElement).value)
-        }),
-        h('button', { class: 'primary-button full', onClick: () => emit('diagnose') }, props.diagnosing ? '诊断中...' : '生成诊断建议'),
-        props.diagnosis
-          ? h('div', { class: 'diagnosis-card' }, [
-            h('strong', `${props.diagnosis.severity} 事件`),
-            h('p', props.diagnosis.conclusion),
-            h('ul', props.diagnosis.recommendedActions.slice(0, 3).map((item) => h('li', item)))
-          ])
-          : h('p', { class: 'muted' }, '输入故障现象后生成处置建议。'),
-        h('div', { class: 'work-actions' }, [
-          h('button', { class: 'primary-button', type: 'button' }, '接单'),
-          h('button', { class: 'outline-button strong', type: 'button' }, '转派'),
-          h('button', { class: 'primary-button', type: 'button' }, '提交处置'),
-          h('button', { class: 'danger-button', type: 'button' }, '关闭工单')
-        ]),
-        h('h3', '处理记录'),
-        h('ul', { class: 'record-list' }, [
-          h('li', '10:21 工单创建'),
-          h('li', '10:23 已指派给当前维护人员'),
-          h('li', '10:26 维护人员查看工单')
-        ])
-      ])
-    ]);
-  }
-});
-
-const MaintainerAlerts = defineComponent({
-  name: 'MaintainerAlerts',
-  props: {
-    alerts: { type: Array as () => AlertEvent[], required: true }
-  },
-  emits: ['createTicket'],
-  setup(props, { emit }) {
-    return () => h('div', { class: 'page-grid maintainer-alerts' }, [
-      h('section', { class: 'panel wide-table' }, [
-        panelHead('告警待办', '一线维护人员只处理分派范围内告警'),
-        simpleTable(['级别', '告警名称', '来源对象', '指标', '状态', '操作'], props.alerts.map((alert) => [
-          alert.severity,
-          alert.title,
-          alert.assetId,
-          alert.metric,
-          statusLabel(alert.status),
-          '接单  转工单'
-        ])),
-        h('button', { class: 'primary-button table-action', onClick: () => emit('createTicket', props.alerts[0]) }, '转入我的工单')
-      ])
-    ]);
-  }
-});
-
-const MaintainerDevices = defineComponent({
-  name: 'MaintainerDevices',
-  props: {
-    assets: { type: Array as () => Asset[], required: true },
-    targets: { type: Array as () => MonitorTarget[], required: true },
-    wslNode: { type: Object as () => NodeInfo | null, default: null },
-    wslNodeStatus: { type: String, required: true }
-  },
-  setup(props) {
-    return () => h('div', { class: 'page-grid maintainer-devices' }, [
-      h('section', { class: 'panel wide-table' }, [
-        panelHead('设备状态', '维护范围内资产和采集目标'),
-        simpleTable(['设备名称', '地址', '类型', '状态', '采集方式'], props.assets.map((asset) => [
-          asset.name,
-          asset.address,
-          asset.type,
-          statusLabel(asset.status),
-          asset.collector
-        ]))
-      ]),
-      h('aside', { class: 'panel action-detail' }, [
-        panelHead('真实 Linux 节点', props.wslNodeStatus),
-        detailLine('主机名', props.wslNode?.nodename ?? '-'),
-        detailLine('系统', `${props.wslNode?.sysname ?? '-'} ${props.wslNode?.machine ?? ''}`),
-        detailLine('内核', props.wslNode?.release ?? '-'),
-        detailLine('采集源', 'Prometheus / node_exporter')
-      ])
-    ]);
-  }
-});
 
 const PlaceholderPage = defineComponent({
   name: 'PlaceholderPage',
@@ -694,17 +218,43 @@ const session = ref<{ role: Role; name: string } | null>(null);
 const activeView = ref<ViewKey>('overview');
 const loading = ref(false);
 
-const overview = ref<Overview>({
-  totalAssets: 0,
-  onlineAssets: 0,
-  activeAlerts: 0,
-  openWorkOrders: 0,
-  targetAvailability: 0
-});
-const assets = ref<Asset[]>([]);
-const monitorTargets = ref<MonitorTarget[]>([]);
-const alerts = ref<AlertEvent[]>([]);
-const workOrders = ref<WorkOrder[]>([]);
+const demoOverview: Overview = {
+  totalAssets: 2568,
+  onlineAssets: 1892,
+  activeAlerts: 38,
+  openWorkOrders: 32,
+  targetAvailability: 99.95
+};
+
+const demoAssets: Asset[] = [
+  { id: 'srv-web-01', name: 'web-prod-01', type: 'Linux 服务器', model: 'Ubuntu 22.04', address: '10.10.1.11', status: 'online', location: '生产区 / Web 集群', collector: 'node_exporter' },
+  { id: 'srv-db-01', name: 'mysql-core-01', type: '数据库实例', model: 'MySQL 8.0', address: '10.10.2.21', status: 'online', location: '生产区 / 数据库集群', collector: 'mysqld_exporter' },
+  { id: 'net-core-01', name: 'core-sw-01', type: '核心交换机', model: 'VRP Simulator', address: '10.10.0.1', status: 'warning', location: '核心网络区', collector: 'snmp_exporter' },
+  { id: 'wsl-node-01', name: 'linux-test-node', type: 'Linux 虚拟机', model: 'WSL2 / Ubuntu', address: '127.0.0.1:9100', status: 'online', location: '本机实验环境', collector: 'node_exporter' }
+];
+
+const demoMonitorTargets: MonitorTarget[] = [
+  { id: 'prom-01', name: 'Prometheus', endpoint: 'http://127.0.0.1:9090/-/healthy', source: 'docker', status: 'up', latencyMs: 12 },
+  { id: 'blackbox-01', name: '门户 HTTP 探测', endpoint: 'http://127.0.0.1:9115/probe', source: 'docker', status: 'up', latencyMs: 38 },
+  { id: 'node-01', name: 'Linux 节点采集', endpoint: 'http://127.0.0.1:9100/metrics', source: 'wsl', status: 'up', latencyMs: 20 }
+];
+
+const demoAlerts: AlertEvent[] = [
+  { id: 'INC-20260513-001', assetId: 'net-core-01', title: '核心交换机 CPU 使用率过高', severity: 'P2', status: 'active', metric: 'cpu_usage', summary: 'CPU 持续高于 92%，建议检查接口流量与控制面负载。' },
+  { id: 'INC-20260513-002', assetId: 'srv-web-01', title: '门户服务 HTTP 探测超时', severity: 'P3', status: 'processing', metric: 'probe_success', summary: 'Blackbox 探测间歇失败，需要联动应用日志排查。' },
+  { id: 'INC-20260513-003', assetId: 'srv-db-01', title: '数据库连接数接近阈值', severity: 'P3', status: 'resolved', metric: 'threads_connected', summary: '连接数峰值已恢复，继续观察慢 SQL。' }
+];
+
+const demoWorkOrders: WorkOrder[] = [
+  { id: 'WO-20260513-1001', alertId: 'INC-20260513-001', title: '处理：核心交换机 CPU 使用率过高', category: 'network', status: 'processing', assignee: '李四', description: '排查核心交换机接口流量、路由震荡和控制面进程占用。' },
+  { id: 'WO-20260513-1002', alertId: 'INC-20260513-002', title: '处理：门户服务 HTTP 探测超时', category: 'app', status: 'open', assignee: '王敏', description: '检查 Nginx、应用实例健康状态和 Blackbox 探测链路。' }
+];
+
+const overview = ref<Overview>({ ...demoOverview });
+const assets = ref<Asset[]>([...demoAssets]);
+const monitorTargets = ref<MonitorTarget[]>([...demoMonitorTargets]);
+const alerts = ref<AlertEvent[]>([...demoAlerts]);
+const workOrders = ref<WorkOrder[]>([...demoWorkOrders]);
 const wslNodeStatus = ref('检查中');
 const wslNode = ref<NodeInfo | null>(null);
 const diagnoseQuestion = ref('Blackbox 链路探测失败，业务入口访问偶发超时。');
@@ -737,7 +287,11 @@ async function requestJson<T>(url: string, options?: RequestInit): Promise<T> {
     headers: { 'Content-Type': 'application/json' },
     ...options
   });
-  const payload = (await response.json()) as ApiResponse<T>;
+  const text = await response.text();
+  if (!text) {
+    throw new Error(`接口无响应: ${url}`);
+  }
+  const payload = JSON.parse(text) as ApiResponse<T>;
   if (!response.ok || payload.code >= 400) {
     throw new Error(payload.message || `请求失败: ${url}`);
   }
@@ -745,18 +299,26 @@ async function requestJson<T>(url: string, options?: RequestInit): Promise<T> {
 }
 
 async function loadOpsData() {
-  const [overviewData, assetData, targetData, alertData, orderData] = await Promise.all([
-    requestJson<Overview>('/api/ops/overview'),
-    requestJson<Asset[]>('/api/ops/assets'),
-    requestJson<MonitorTarget[]>('/api/ops/targets'),
-    requestJson<AlertEvent[]>('/api/ops/alerts'),
-    requestJson<WorkOrder[]>('/api/ops/work-orders')
-  ]);
-  overview.value = overviewData;
-  assets.value = assetData;
-  monitorTargets.value = targetData;
-  alerts.value = alertData;
-  workOrders.value = orderData;
+  try {
+    const [overviewData, assetData, targetData, alertData, orderData] = await Promise.all([
+      requestJson<Overview>('/api/ops/overview'),
+      requestJson<Asset[]>('/api/ops/assets'),
+      requestJson<MonitorTarget[]>('/api/ops/targets'),
+      requestJson<AlertEvent[]>('/api/ops/alerts'),
+      requestJson<WorkOrder[]>('/api/ops/work-orders')
+    ]);
+    overview.value = overviewData;
+    assets.value = assetData;
+    monitorTargets.value = targetData;
+    alerts.value = alertData;
+    workOrders.value = orderData;
+  } catch (error) {
+    overview.value = { ...demoOverview };
+    assets.value = [...demoAssets];
+    monitorTargets.value = [...demoMonitorTargets];
+    alerts.value = [...demoAlerts];
+    workOrders.value = [...demoWorkOrders];
+  }
 }
 
 async function queryPrometheus(source: 'docker' | 'wsl', query: string) {
@@ -854,174 +416,10 @@ function initPreviewSession() {
   }
 }
 
-function metricCard(title: string, value: string, change: string, tone: string, icon: unknown) {
-  return h('article', { class: ['metric-tile', tone] }, [
-    h('div', { class: 'metric-icon' }, [h('el-icon', null, () => h(icon as object))]),
-    h('div', { class: 'metric-main' }, [
-      h('span', title),
-      h('strong', value),
-      h('small', ['较昨日 ', h('b', change)])
-    ]),
-    h(Sparkline, { tone })
-  ]);
-}
-
-function panelHead(title: string, meta: string) {
-  return h('div', { class: 'panel-head' }, [h('h2', title), h('button', typeButtonAttrs(), meta)]);
-}
-
-function commandItem(label: string, description: string, value: string, tone: string) {
-  return h('article', { class: ['command-item', tone] }, [
-    h('span', label),
-    h('strong', value),
-    h('p', description)
-  ]);
-}
-
-function typeButtonAttrs() {
-  return { type: 'button', class: 'text-link' };
-}
-
-function simpleTable(headers: string[], rows: string[][], extra?: unknown) {
-  return h('div', { class: 'data-table-wrap' }, [
-    h('table', { class: 'data-table' }, [
-      h('thead', h('tr', headers.map((header) => h('th', header)))),
-      h('tbody', rows.map((row) => h('tr', row.map((cell) => h('td', renderCell(cell))))))
-    ]),
-    extra
-  ]);
-}
-
-function renderCell(cell: string) {
-  if (['正常', '成功', '已恢复', '已完成', 'online'].includes(cell)) {
-    return h('span', { class: 'cell-success' }, cell);
-  }
-  if (['未处理', 'offline', '高', 'P2'].includes(cell)) {
-    return h('span', { class: 'cell-danger' }, cell);
-  }
-  if (['处理中', '部分成功', 'warning', '中', 'P3'].includes(cell)) {
-    return h('span', { class: 'cell-warning' }, cell);
-  }
-  return cell;
-}
-
-function trendChart() {
-  return h('div', { class: 'trend-chart' }, [
-    h('div', { class: 'trend-lines' }, [
-      h('span', { class: 'line red' }),
-      h('span', { class: 'line orange' }),
-      h('span', { class: 'line blue' }),
-      h('span', { class: 'line green' })
-    ]),
-    h('div', { class: 'grid-lines' })
-  ]);
-}
-
-function legendItem(label: string, value: string, color: string) {
-  return h('li', [h('i', { class: color }), h('span', label), h('strong', value)]);
-}
-
-function usageCard(title: string, value: string, tone: string) {
-  return h('article', { class: 'usage-card' }, [
-    h('span', title),
-    h('strong', value),
-    h(Sparkline, { tone })
-  ]);
-}
-
-function ticketColumn(title: string, orders: WorkOrder[]) {
-  return h('article', { class: 'mini-ticket-col' }, [
-    h('h3', `${title} (${orders.length})`),
-    ...(orders.length
-      ? orders.slice(0, 3).map((order) => h('div', { class: 'mini-ticket' }, [
-        h('strong', order.id),
-        h('span', order.title),
-        h('em', `处理人：${order.assignee}`)
-      ]))
-      : [emptyState('当前无待处理工单')])
-  ]);
-}
-
-function kanbanColumn(title: string, orders: WorkOrder[]) {
-  const fallback = orders.length ? orders : demoOrdersByColumn(title);
-  return h('article', { class: 'kanban-col' }, [
-    h('h3', `${title} (${fallback.length})`),
-    ...(fallback.length
-      ? fallback.map((order) => h('div', { class: 'work-card' }, [
-        h('strong', order.title),
-        h('span', order.id),
-        h('p', order.description),
-        h('footer', [h('em', order.assignee), h('b', order.category)])
-      ]))
-      : [emptyState('暂无流转记录')])
-  ]);
-}
-
-function demoOrdersByColumn(title: string): WorkOrder[] {
-  if (title.includes('待接单') || title.includes('待分派')) {
-    return [{
-      id: 'WO-20260513-2001',
-      alertId: 'INC-20260513-009',
-      title: '处理：出口链路 HTTP 探测抖动',
-      category: 'network',
-      status: 'open',
-      assignee: '李四',
-      description: 'Blackbox 探测出现间歇超时，需检查 DNS 与防火墙策略。'
-    }];
-  }
-  if (title.includes('处理中')) {
-    return [{
-      id: 'WO-20260513-2002',
-      alertId: 'INC-20260513-010',
-      title: 'Linux 节点负载观察',
-      category: 'hardware',
-      status: 'processing',
-      assignee: '李四',
-      description: 'node_exporter 指标显示 CPU 短时升高，持续观察并记录。'
-    }];
-  }
-  return [];
-}
-
-function emptyState(text: string) {
-  return h('div', { class: 'empty-state' }, [
-    h('strong', text),
-    h('span', '暂无需要立即处理的记录')
-  ]);
-}
-
-function detailLine(label: string, value: string) {
-  return h('p', { class: 'detail-line' }, [h('span', label), h('strong', value)]);
-}
-
-function ringCard(value: string, label: string, tone: string) {
-  return h('article', { class: ['ring-card', tone] }, [h('div', { class: 'ring' }, value), h('p', label), h('small', '较昨日 +2.3%')]);
-}
-
-function barItem(label: string, percent: number, tone: string) {
-  return h('div', { class: 'bar-item' }, [
-    h('span', label),
-    h('div', { class: 'bar-track' }, h('i', { class: tone, style: `width:${percent}%` })),
-    h('strong', String(percent))
-  ]);
-}
-
-function statusLabel(status: string) {
-  const labels: Record<string, string> = {
-    active: '未处理',
-    processing: '处理中',
-    resolved: '已恢复',
-    open: '未处理',
-    closed: '已完成',
-    online: '正常',
-    warning: '告警',
-    offline: '离线'
-  };
-  return labels[status] ?? status;
-}
-
 onMounted(() => {
   initPreviewSession();
-  refreshAll();
+  if (session.value) {
+    refreshAll();
+  }
 });
 </script>

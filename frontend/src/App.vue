@@ -1,115 +1,5 @@
 <template>
-  <main v-if="!session" class="login-shell">
-    <section class="login-hero">
-      <div class="login-brand">
-        <span class="brand-symbol">◇</span>
-        <div>
-          <strong>ICT 智能运维平台</strong>
-          <small>面向企业基础设施的监控、告警与工单闭环</small>
-        </div>
-      </div>
-
-      <div class="role-switch">
-        <button :class="{ active: loginRole === 'admin' }" type="button" @click="setLoginRole('admin')">
-          管理员入口
-        </button>
-        <button :class="{ active: loginRole === 'maintainer' }" type="button" @click="setLoginRole('maintainer')">
-          维护人员入口
-        </button>
-      </div>
-
-      <div class="hero-copy">
-        <p>{{ loginRole === 'admin' ? 'ADMIN CONSOLE' : 'MAINTENANCE DESK' }}</p>
-        <h1>{{ loginConfig.title }}</h1>
-        <span>{{ loginConfig.description }}</span>
-      </div>
-
-      <div class="ops-visual">
-        <div class="ops-map-lines">
-          <span class="line-one"></span>
-          <span class="line-two"></span>
-          <span class="line-three"></span>
-        </div>
-        <div class="ops-card node-card left">
-          <span>核心交换机-01</span>
-          <strong>在线</strong>
-        </div>
-        <div class="ops-card node-card right">
-          <span>{{ loginRole === 'admin' ? '告警总数' : '待办工单' }}</span>
-          <strong>{{ loginRole === 'admin' ? '38' : '7' }}</strong>
-        </div>
-        <div class="core-device">
-          <i>◇</i>
-          <strong>核心设备</strong>
-          <small>{{ loginRole === 'admin' ? '统一纳管' : '现场处置' }}</small>
-        </div>
-        <div class="device-node node-prom">
-          <span>Prometheus</span>
-          <strong>UP</strong>
-        </div>
-        <div class="device-node node-redis">
-          <span>Redis</span>
-          <strong>Ready</strong>
-        </div>
-        <div class="device-node node-linux">
-          <span>Linux VM</span>
-          <strong>node_exporter</strong>
-        </div>
-        <div class="ops-card node-card bottom">
-          <span>服务可用率</span>
-          <strong>99.95%</strong>
-        </div>
-      </div>
-
-      <div class="login-stats">
-        <article v-for="item in loginStats" :key="item.label">
-          <strong>{{ item.value }}</strong>
-          <span>{{ item.label }}</span>
-        </article>
-      </div>
-    </section>
-
-    <section class="login-panel">
-      <div class="login-card">
-        <div class="login-card-title">
-          <el-icon><component :is="loginConfig.icon" /></el-icon>
-          <div>
-            <h2>{{ loginConfig.formTitle }}</h2>
-            <p>{{ loginConfig.formHint }}</p>
-          </div>
-        </div>
-
-        <div class="login-form-grid">
-          <label class="login-field">
-            <span class="login-field-label">{{ loginRole === 'admin' ? '管理员账号' : '维护人员工号' }}</span>
-            <input v-model="loginForm.account" :placeholder="loginRole === 'admin' ? 'admin' : 'ops001'" />
-          </label>
-          <label class="login-field">
-            <span class="login-field-label">登录密码</span>
-            <input v-model="loginForm.password" placeholder="任意输入用于演示" type="password" />
-          </label>
-          <label class="login-field">
-            <span class="login-field-label">{{ loginRole === 'admin' ? '管理范围' : '所属班组' }}</span>
-            <select v-model="loginForm.scope">
-              <option v-for="option in loginScopeOptions" :key="option" :value="option">{{ option }}</option>
-            </select>
-          </label>
-        </div>
-
-        <div class="login-options">
-          <label class="checkline">
-            <input v-model="loginForm.remember" type="checkbox" />
-            <span>记住登录状态</span>
-          </label>
-          <button type="button" @click="switchLoginRole">{{ loginConfig.altEntry }}</button>
-        </div>
-
-        <el-button class="login-submit" type="primary" @click="login">
-          {{ loginConfig.action }}
-        </el-button>
-      </div>
-    </section>
-  </main>
+  <LoginView v-if="!session" @login="login" />
 
   <main v-else class="app-shell">
     <aside class="side-nav">
@@ -249,6 +139,7 @@
 <script setup lang="ts">
 import { computed, defineComponent, h, onMounted, ref } from 'vue';
 import { ElMessage } from 'element-plus';
+import LoginView, { type LoginRole } from './components/LoginView.vue';
 import {
   ArrowDown,
   Bell,
@@ -263,7 +154,6 @@ import {
   Fold,
   Histogram,
   House,
-  Key,
   Lightning,
   MagicStick,
   Monitor,
@@ -273,11 +163,10 @@ import {
   Setting,
   SwitchButton,
   Tickets,
-  Tools,
   Warning
 } from '@element-plus/icons-vue';
 
-type Role = 'admin' | 'maintainer';
+type Role = LoginRole;
 type AdminView = 'overview' | 'monitor' | 'assets' | 'alerts' | 'tickets' | 'automation' | 'reports' | 'settings';
 type MaintainerView = 'myTickets' | 'todoAlerts' | 'deviceStatus' | 'records';
 type ViewKey = AdminView | MaintainerView;
@@ -801,11 +690,9 @@ const maintainerNavItems = [
   { key: 'records', label: '处置记录', icon: Document }
 ] as const;
 
-const loginRole = ref<Role>('admin');
 const session = ref<{ role: Role; name: string } | null>(null);
 const activeView = ref<ViewKey>('overview');
 const loading = ref(false);
-const loginForm = ref({ account: '', password: '', scope: '全局管理控制台', remember: true });
 
 const overview = ref<Overview>({
   totalAssets: 0,
@@ -823,45 +710,6 @@ const wslNode = ref<NodeInfo | null>(null);
 const diagnoseQuestion = ref('Blackbox 链路探测失败，业务入口访问偶发超时。');
 const diagnosing = ref(false);
 const diagnosis = ref<Diagnosis | null>(null);
-
-const loginConfig = computed(() => {
-  if (loginRole.value === 'admin') {
-    return {
-      title: '管理员后台',
-      description: '管理资产、监控目标、告警规则、用户权限和自动化策略。',
-      formTitle: '管理员登录',
-      formHint: '进入完整管理控制台',
-      action: '登录管理后台',
-      altEntry: '维护人员入口',
-      icon: Key
-    };
-  }
-  return {
-    title: '维护工作台',
-    description: '聚焦我的告警、我的工单、SLA 和现场处置记录。',
-    formTitle: '维护人员登录',
-    formHint: '进入一线运维处理界面',
-    action: '进入维护工作台',
-    altEntry: '管理员入口',
-    icon: Tools
-  };
-});
-
-const loginStats = computed(() => loginRole.value === 'admin'
-  ? [
-    { value: '128', label: '纳管设备' },
-    { value: '9', label: '活跃告警' },
-    { value: '99.95%', label: '服务可用率' }
-  ]
-  : [
-    { value: '7', label: '我的待办' },
-    { value: '2', label: '即将超时' },
-    { value: '8min', label: '平均响应' }
-  ]);
-
-const loginScopeOptions = computed(() => loginRole.value === 'admin'
-  ? ['全局管理控制台', '资源与告警管理', '工单与报表审计']
-  : ['运维一组', '网络组', '数据底座组']);
 
 const currentNavItems = computed(() => session.value?.role === 'admin' ? adminNavItems : maintainerNavItems);
 const pageTitle = computed(() => {
@@ -978,12 +826,12 @@ async function refreshAll() {
   }
 }
 
-function login() {
+function login(role: Role) {
   session.value = {
-    role: loginRole.value,
-    name: loginRole.value === 'admin' ? '张伟' : '李四'
+    role,
+    name: role === 'admin' ? '张伟' : '李四'
   };
-  activeView.value = loginRole.value === 'admin' ? 'overview' : 'myTickets';
+  activeView.value = role === 'admin' ? 'overview' : 'myTickets';
   refreshAll();
 }
 
@@ -992,24 +840,10 @@ function logout() {
   activeView.value = 'overview';
 }
 
-function switchLoginRole() {
-  setLoginRole(loginRole.value === 'admin' ? 'maintainer' : 'admin');
-}
-
-function setLoginRole(role: Role) {
-  loginRole.value = role;
-  loginForm.value.scope = loginScopeOptions.value[0];
-}
-
 function initPreviewSession() {
   const params = new URLSearchParams(window.location.search);
   const role = params.get('role');
-  const loginRoleParam = params.get('loginRole');
   const view = params.get('view');
-  if (!role && (loginRoleParam === 'admin' || loginRoleParam === 'maintainer')) {
-    loginRole.value = loginRoleParam;
-    loginForm.value.scope = loginScopeOptions.value[0];
-  }
   if (role === 'admin') {
     session.value = { role: 'admin', name: '张伟' };
     activeView.value = (view as ViewKey) || 'overview';

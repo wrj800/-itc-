@@ -582,6 +582,8 @@ button {
   height: 36px;
   border-radius: 6px;
   font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
 }
 
 .icon-button,
@@ -635,6 +637,8 @@ button {
 }
 
 .outline-button {
+  flex: 0 0 auto;
+  min-width: 78px;
   padding: 0 14px;
   border: 1px solid #d6e0ec;
   background: #ffffff;
@@ -647,6 +651,8 @@ button {
 }
 
 .primary-button {
+  flex: 0 0 auto;
+  min-width: 92px;
   padding: 0 16px;
   border: 1px solid #07948a;
   background: linear-gradient(180deg, #12a99e, #07887f);
@@ -715,6 +721,7 @@ button {
 
 .page-actions {
   display: flex;
+  align-items: center;
   gap: 10px;
 }
 

@@ -688,6 +688,66 @@ button {
   gap: 14px;
 }
 
+.ops-command-bar {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.command-item {
+  position: relative;
+  min-height: 82px;
+  padding: 13px 14px 12px 16px;
+  overflow: hidden;
+  border: 1px solid #dbe4ee;
+  border-radius: 6px;
+  background: linear-gradient(180deg, #ffffff, #f8fbff);
+  box-shadow: 0 8px 22px rgba(33, 51, 75, 0.04);
+}
+
+.command-item::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 4px;
+  height: 100%;
+  background: #14b8a6;
+}
+
+.command-item.blue::before {
+  background: #2f82ef;
+}
+
+.command-item.orange::before {
+  background: #ff8f1f;
+}
+
+.command-item.green::before {
+  background: #13b89f;
+}
+
+.command-item span {
+  color: #5a6d83;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.command-item strong {
+  display: block;
+  margin: 6px 0 4px;
+  color: #07162a;
+  font-size: 18px;
+}
+
+.command-item p {
+  margin: 0;
+  color: #6b7d90;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
 .kpi-row {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -1401,6 +1461,29 @@ button {
   color: #078d86;
 }
 
+.empty-state {
+  display: grid;
+  place-items: center;
+  gap: 6px;
+  min-height: 96px;
+  padding: 14px;
+  border: 1px dashed #d4e0eb;
+  border-radius: 6px;
+  background: #fbfdff;
+  color: #75879a;
+  text-align: center;
+}
+
+.empty-state strong {
+  color: #53677e;
+  font-size: 13px;
+}
+
+.empty-state span {
+  color: #8b9aad;
+  font-size: 12px;
+}
+
 .sla-bar {
   height: 8px;
   margin: 10px 0 18px;
@@ -1450,6 +1533,36 @@ button {
   display: grid;
   gap: 14px;
   min-width: 0;
+}
+
+.shift-brief {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.shift-brief div {
+  min-height: 72px;
+  padding: 12px 14px;
+  border: 1px solid #dbe4ee;
+  border-radius: 6px;
+  background: #ffffff;
+  box-shadow: 0 8px 22px rgba(33, 51, 75, 0.04);
+}
+
+.shift-brief span {
+  display: block;
+  color: #5f7186;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.shift-brief strong {
+  display: block;
+  margin-top: 8px;
+  color: #10243b;
+  font-size: 15px;
+  line-height: 1.35;
 }
 
 .maintainer-desk .kpi-row {
@@ -1633,7 +1746,9 @@ button {
 
 @media (max-width: 1280px) {
   .kpi-row,
-  .kpi-row.four {
+  .kpi-row.four,
+  .ops-command-bar,
+  .shift-brief {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
@@ -1702,6 +1817,8 @@ button {
   .capacity-row,
   .ticket-mini-columns,
   .resource-grid,
+  .ops-command-bar,
+  .shift-brief,
   .login-stats {
     grid-template-columns: 1fr;
   }

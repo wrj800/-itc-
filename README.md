@@ -52,8 +52,9 @@ deploy/wsl-real-node.md
 3. WSL Ubuntu 真实 Linux 节点可被 Prometheus 采集。
 4. 后端支持 `docker` 与 `wsl` 两个 Prometheus 数据源。
 5. 后端已新增运维业务接口，覆盖总览、设备资产、监控目标、告警中心、工单流转和 AI 诊断。
-6. 前端已扩展为可演示的运维工作台，包含总览、资产、监控、告警、工单和 AI 诊断模块。
-7. 当前业务数据先使用内存样例数据打通闭环，后续再替换为 MySQL 持久化。
+6. 前端已扩展为管理员后台和维护人员工作台，包含角色入口分离、总览、资产、监控、告警、工单和 AI 诊断模块。
+7. 已补充优秀开源项目对标方案、贡献说明、Issue/PR 模板和 GitHub Actions CI。
+8. 当前业务数据先使用内存样例数据打通闭环，后续再替换为 MySQL 持久化。
 
 ## 当前可访问地址
 
@@ -88,4 +89,23 @@ GET  /api/monitor/prometheus/query?source=wsl&query=up
 3. `docs/开发过程记录.md`
 4. `docs/开发规则与AI接手规范.md`
 5. `docs/设计图索引.md`
-6. 与环境、部署、接口相关的专项文档
+6. `docs/优秀项目对标与改进方案.md`
+7. 与环境、部署、接口相关的专项文档
+
+## 工程化质量入口
+
+```text
+CONTRIBUTING.md
+.github/workflows/ci.yml
+.github/ISSUE_TEMPLATE/
+.github/pull_request_template.md
+docs/优秀项目对标与改进方案.md
+docs/运维平台UI设计规范.md
+```
+
+当前 CI 会在 GitHub 上执行：
+
+```text
+mvn -q test
+cd frontend && npm ci && npm run build
+```

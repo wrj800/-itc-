@@ -10,10 +10,10 @@
       </div>
 
       <div class="role-switch">
-        <button :class="{ active: loginRole === 'admin' }" type="button" @click="loginRole = 'admin'">
+        <button :class="{ active: loginRole === 'admin' }" type="button" @click="setLoginRole('admin')">
           管理员入口
         </button>
-        <button :class="{ active: loginRole === 'maintainer' }" type="button" @click="loginRole = 'maintainer'">
+        <button :class="{ active: loginRole === 'maintainer' }" type="button" @click="setLoginRole('maintainer')">
           维护人员入口
         </button>
       </div>
@@ -79,22 +79,22 @@
           </div>
         </div>
 
-        <label>
-          <span>{{ loginRole === 'admin' ? '管理员账号' : '维护人员工号' }}</span>
-          <input v-model="loginForm.account" :placeholder="loginRole === 'admin' ? 'admin' : 'ops001'" />
-        </label>
-        <label>
-          <span>密码</span>
-          <input v-model="loginForm.password" placeholder="任意输入用于演示" type="password" />
-        </label>
-        <label v-if="loginRole === 'maintainer'">
-          <span>班组</span>
-          <select v-model="loginForm.team">
-            <option>运维一组</option>
-            <option>网络组</option>
-            <option>数据底座组</option>
-          </select>
-        </label>
+        <div class="login-form-grid">
+          <label class="login-field">
+            <span class="login-field-label">{{ loginRole === 'admin' ? '管理员账号' : '维护人员工号' }}</span>
+            <input v-model="loginForm.account" :placeholder="loginRole === 'admin' ? 'admin' : 'ops001'" />
+          </label>
+          <label class="login-field">
+            <span class="login-field-label">登录密码</span>
+            <input v-model="loginForm.password" placeholder="任意输入用于演示" type="password" />
+          </label>
+          <label class="login-field">
+            <span class="login-field-label">{{ loginRole === 'admin' ? '管理范围' : '所属班组' }}</span>
+            <select v-model="loginForm.scope">
+              <option v-for="option in loginScopeOptions" :key="option" :value="option">{{ option }}</option>
+            </select>
+          </label>
+        </div>
 
         <div class="login-options">
           <label class="checkline">
@@ -805,7 +805,7 @@ const loginRole = ref<Role>('admin');
 const session = ref<{ role: Role; name: string } | null>(null);
 const activeView = ref<ViewKey>('overview');
 const loading = ref(false);
-const loginForm = ref({ account: '', password: '', team: '运维一组', remember: true });
+const loginForm = ref({ account: '', password: '', scope: '全局管理控制台', remember: true });
 
 const overview = ref<Overview>({
   totalAssets: 0,
@@ -858,6 +858,10 @@ const loginStats = computed(() => loginRole.value === 'admin'
     { value: '2', label: '即将超时' },
     { value: '8min', label: '平均响应' }
   ]);
+
+const loginScopeOptions = computed(() => loginRole.value === 'admin'
+  ? ['全局管理控制台', '资源与告警管理', '工单与报表审计']
+  : ['运维一组', '网络组', '数据底座组']);
 
 const currentNavItems = computed(() => session.value?.role === 'admin' ? adminNavItems : maintainerNavItems);
 const pageTitle = computed(() => {
@@ -989,13 +993,23 @@ function logout() {
 }
 
 function switchLoginRole() {
-  loginRole.value = loginRole.value === 'admin' ? 'maintainer' : 'admin';
+  setLoginRole(loginRole.value === 'admin' ? 'maintainer' : 'admin');
+}
+
+function setLoginRole(role: Role) {
+  loginRole.value = role;
+  loginForm.value.scope = loginScopeOptions.value[0];
 }
 
 function initPreviewSession() {
   const params = new URLSearchParams(window.location.search);
   const role = params.get('role');
+  const loginRoleParam = params.get('loginRole');
   const view = params.get('view');
+  if (!role && (loginRoleParam === 'admin' || loginRoleParam === 'maintainer')) {
+    loginRole.value = loginRoleParam;
+    loginForm.value.scope = loginScopeOptions.value[0];
+  }
   if (role === 'admin') {
     session.value = { role: 'admin', name: '张伟' };
     activeView.value = (view as ViewKey) || 'overview';
